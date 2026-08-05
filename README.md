@@ -2,8 +2,7 @@
 
 A laptop-friendly performance mod for **Fabric, Minecraft 26.2**.
 
-Named for the joke: Sodium (the mod) + Chlorine = salt. Chlorine is built
-to sit *alongside* Sodium rather than compete with it — it doesn't touch
+it doesn't touch
 chunk rendering, memory layout, or GUI batching, since Sodium, FerriteCore
 and ImmediatelyFast already do that well. Instead it covers the gaps:
 
