@@ -2,7 +2,8 @@
 
 A laptop-friendly performance mod for **Fabric, Minecraft 26.2**.
 
-it doesn't touch
+Named for the joke: Sodium (the mod) + Chlorine = salt. Chlorine is built
+to sit *alongside* Sodium rather than compete with it — it doesn't touch
 chunk rendering, memory layout, or GUI batching, since Sodium, FerriteCore
 and ImmediatelyFast already do that well. Instead it covers the gaps:
 
@@ -12,32 +13,52 @@ and ImmediatelyFast already do that well. Instead it covers the gaps:
 | **Laptop power saver** | Caps framerate and hides clouds while the window is unfocused/minimized | None of Sodium/Iris/EntityCulling/ImmediatelyFast address unfocused-window heat, fan noise, or battery drain |
 | **Distant mob AI throttle** | Skips goal-selector AI ticking (not physics) for mobs with no player nearby, on a staggered schedule | Tick-logic optimization, a different axis than Sodium entirely |
 | **Item entity merging** | Periodically merges nearby stackable item drops near each player | Reduces entity count/tick+render load from dense farms, beyond what vanilla's touching-only merge does |
-| **Low-end auto-tune** | On first launch, if your heap/core count look constrained, sets entity shadows, biome blend, mipmaps, particles, graphics mode, and ambient occlusion to lighter defaults | One-time setup nicety, not something the render-focused mods do |
+| **Low-end auto-tune** | On first launch, if your heap/core count look constrained, sets entity shadows, biome blend, mipmaps, particles, and ambient occlusion to lighter defaults | One-time setup nicety, not something the render-focused mods do |
+| **In-game settings screen** | A real config screen (Mod Menu → Chlorine → Config), same as Sodium/Sodium Extra/Iris have | No need to hand-edit JSON to tune anything |
 
 Chlorine works standalone, but is written to be fully compatible with
 **Sodium, Iris, Lithium, FerriteCore, EntityCulling, and ImmediatelyFast** —
 none of its features touch the same code paths those mods do.
 
+**Note on dependencies:** Chlorine *requires* [Cloth Config API](https://modrinth.com/mod/cloth-config)
+to be installed (it's what the settings screen is built with — without it
+Chlorine won't load at all, rather than silently losing just the screen).
+[Mod Menu](https://modrinth.com/mod/modmenu) is optional — it's what adds
+the actual "Config" button; without it you can still edit
+`config/chlorine.json` by hand.
+
 ## Building
 
-You'll need a JDK 25 and internet access (Loom downloads Minecraft, your
-mappings, and dependencies on first run).
+You'll need a JDK 25, **Gradle 9.5.1** installed locally, and internet
+access (Loom downloads Minecraft and dependencies on first run).
 
-```bash
-./gradlew build
-```
+This repo doesn't include a Gradle wrapper (`gradlew`) — it needs a small
+binary (`gradle-wrapper.jar`) that I couldn't generate without network
+access. Two options:
+
+- Install Gradle yourself ([sdkman](https://sdkman.io/), your package
+  manager, or [gradle.org](https://gradle.org/install/)) and run:
+  ```bash
+  gradle build
+  ```
+- Or generate the wrapper once, using your installed Gradle, and commit
+  it so future clones don't need Gradle installed:
+  ```bash
+  gradle wrapper --gradle-version 9.5.1
+  ```
+  After that, `./gradlew build` works like normal.
 
 The output jar lands in `build/libs/chlorine-0.1.0.jar`. Drop that (and
 Fabric API) into your `mods` folder.
 
 ### Building via GitHub Actions instead
 
-This repo includes `.github/workflows/build.yml`. Push it to a GitHub repo
-and it'll build automatically on real infrastructure (with real internet
-access, unlike the sandbox this was written in) — check the **Actions**
-tab for the run, and download the built jar from the run's **Artifacts**
-section. If it fails, the log will point at the exact line — paste that
-back and I can fix the accessor/target it's complaining about.
+This repo includes `.github/workflows/build.yml`, which installs Gradle
+9.5.1 directly (no wrapper needed) and builds on push. Check the
+**Actions** tab for the run, and download the built jar from the run's
+**Artifacts** section. If it fails, the log will point at the exact
+line — paste that back and I can fix the accessor/target it's
+complaining about.
 
 ## Configuration
 
@@ -72,31 +93,40 @@ rather it not touch this at all, set `enableAdaptiveSimulationDistance` to
 ## ⚠️ Important: this targets a very new Minecraft version
 
 Minecraft 26.2 (and the 26.1 unobfuscation switch before it) is only a
-few weeks old as of this writing. I built this using Mojang's official
-mapping names, which are generally stable and well-documented — but I
-wasn't able to actually compile or run this in the environment I wrote it
-in (no internet access to pull Minecraft/Loom dependencies), so I can't
-guarantee it compiles clean on the first try. The two spots most likely
-to need a tweak if `./gradlew build` fails:
+few weeks old as of this writing, and moved a large number of classes
+around beyond just removing obfuscation. Confirmed working as of the last
+successful CI build:
 
-1. **`MobAiThrottleMixin.java`** — targets `Mob.customServerAiStep()`.
-   This method name has been stable across many Minecraft versions, but
-   if Mixin can't find it, open `net.minecraft.world.entity.Mob` in your
-   IDE (after a Gradle sync pulls in sources) and fix the `method = "..."`
-   value to match.
-2. **`PerformanceScaler.java` / `PowerSaver.java` / `LowEndAutoTune.java`** — call
-   `client.options.simulationDistance()`, `client.options.entityDistanceScaling()`,
-   `client.options.particles()`, `client.options.framerateLimit()`,
-   `client.options.cloudStatus()`, `client.options.entityShadows()`,
-   `client.options.biomeBlendRadius()`, `client.options.mipmapLevels()`,
-   `client.options.graphicsMode()`, `client.options.ambientOcclusion()`,
-   which all return `OptionInstance<T>`. If `Options` exposes any of these
-   differently in 26.2, adjust the relevant line. `ambientOcclusion()` is
-   the shakiest guess of the bunch — it may turn out to be an enum
-   (`AmbientOcclusionStatus`) rather than a boolean.
-3. **`ItemMerger.java`** — calls `ItemStack.isSameItemSameComponents(...)`,
-   the post-item-component-rework equality check. If that name has moved,
-   open `net.minecraft.world.item.ItemStack` and swap in the current one.
+- `MobAiThrottleMixin.java`'s target (`Mob.customServerAiStep()`)
+- `client.options.simulationDistance()`, `entityDistanceScaling()`,
+  `framerateLimit()`, `cloudStatus()`, `entityShadows()`,
+  `biomeBlendRadius()`, `mipmapLevels()`, `ambientOcclusion()`
+- `ItemMerger.java`'s `ItemStack.isSameItemSameComponents(...)`
+- The particle-status option, handled via `OptionsCompat.java`'s
+  reflection-based enum lookup (its exact class/package still isn't
+  pinned down, but the lookup-by-name approach means that doesn't matter)
+
+Dropped entirely rather than guessed twice: a "graphics mode"
+(Fast/Fancy/Fabulous) tweak in `LowEndAutoTune` — `Options#graphicsMode()`
+doesn't appear to exist in 26.2 at all, likely reworked as part of the
+26.1/26.2 rendering pipeline rewrite (Vulkan support was added).
+
+**Not yet build-verified** — the newest addition, the in-game settings
+screen:
+
+- **`ChlorineConfigScreenBuilder.java`** — imports
+  `net.minecraft.client.gui.screens.Screen` and
+  `net.minecraft.network.chat.Component`. Both have been stable Mojmap
+  locations for a long time and I'm fairly confident in them, but
+  26.1/26.2 specifically reorganized GUI code (see the
+  [migration primers](https://docs.neoforged.net/primer/docs/26.2/)), so
+  this is the current highest-risk guess in the project. If it fails, the
+  compiler error will say exactly which import is wrong.
+- Cloth Config's own builder methods (`startBooleanToggle`,
+  `startIntSlider`, `startIntField`, `startDoubleField`,
+  `startLongField`) are much lower risk — that API has stayed close to
+  identical across years of Minecraft versions, which is the whole reason
+  this screen is built with Cloth Config instead of raw vanilla widgets.
 
 Everything else (Fabric API events, FabricLoader config paths, Gson) is
 Fabric-API/library-level code that doesn't depend on Minecraft's internal
@@ -120,6 +150,9 @@ src/client/java/com/chlorine/client/  client-only code
   PerformanceScaler.java              adaptive simulation distance + particle fallback
   PowerSaver.java                     unfocused-window framerate cap
   LowEndAutoTune.java                 one-shot startup tuning for weak systems
+  OptionsCompat.java                  reflection helper for the particle-status option
+  ChlorineConfigScreenBuilder.java    in-game settings screen (Cloth Config)
+  ChlorineModMenuIntegration.java     hooks the screen into Mod Menu's "Config" button
 ```
 
 ## License

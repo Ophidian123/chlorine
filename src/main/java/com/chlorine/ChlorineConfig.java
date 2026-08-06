@@ -13,9 +13,11 @@ import java.nio.file.Path;
 
 /**
  * Plain JSON config stored at config/chlorine.json. Every field here is a
- * public mutable field on purpose — PerformanceScaler/PowerSaver read these
- * live, and there's no need for a full config-screen library for a mod
- * this size. Edit the JSON file directly and relaunch to change values.
+ * public mutable field on purpose — PerformanceScaler/PowerSaver read
+ * these live. You can edit the JSON file directly, or use the in-game
+ * settings screen (Mod Menu → Chlorine → Config, powered by Cloth Config —
+ * see ChlorineConfigScreenBuilder.java), which just writes back to this
+ * same file.
  */
 public class ChlorineConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
