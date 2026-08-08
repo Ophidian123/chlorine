@@ -3,9 +3,12 @@
   "minVersion": "0.8",
   "package": "com.chlorine.mixin",
   "mixins": [
-    "MobAiThrottleMixin"
+    "MobAiThrottleMixin",
+    "BrainTickThrottleMixin"
   ],
-  "client": [],
+  "client": [
+    "client.SoundBudgetMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

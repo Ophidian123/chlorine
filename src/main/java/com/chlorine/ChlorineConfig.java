@@ -64,11 +64,30 @@ public class ChlorineConfig {
     public boolean hideCloudsWhenUnfocused = true;
 
     // --- Distant mob AI throttle (server/common) ---
+    // Only affects classic goal-selector mobs (zombies, skeletons, etc.)
+    // — Brain-based mobs (villagers, piglins, ...) override
+    // customServerAiStep() entirely rather than calling super(), so this
+    // mixin never actually reaches them. See enableBrainThrottle below
+    // for the Brain-based equivalent.
     public boolean enableDistantMobAiThrottle = true;
     /** Mobs within this many blocks of any player always tick AI normally. */
     public double aiActiveRadius = 48.0;
     /** Beyond that radius, only run the AI goal selector every Nth tick. */
     public int aiThrottleInterval = 8;
+
+    // --- Distant Brain-based mob throttle (server/common) ---
+    // Villagers, piglins, hoglins, allays, frogs, and other Brain-driven
+    // mobs don't use the classic goal selector at all — they run through
+    // Brain.tick(), which handles memory/sensor updates and behavior
+    // selection. This is often the more expensive path (villages/piglin
+    // bastions with many mobs), and it's not something Lithium or the
+    // mob AI throttle above already covers. Same shape as that throttle:
+    // skip Brain.tick() on off-ticks for Brain-owners with no player
+    // nearby, staggered by entity ID. Reuses aiActiveRadius above for the
+    // "someone's watching" distance.
+    public boolean enableBrainThrottle = true;
+    /** Beyond aiActiveRadius, only run Brain.tick() every Nth tick. */
+    public int brainThrottleInterval = 8;
 
     // --- Item entity merging (server/common) ---
     // Vanilla already merges touching item stacks, but dense drops (mob
@@ -83,6 +102,31 @@ public class ChlorineConfig {
     public double itemMergeScanRadius = 48.0;
     /** Items within this many blocks of each other get merged. */
     public double itemMergeRadius = 2.0;
+
+    // --- XP orb merging (server/common) ---
+    // Same idea as item merging, applied to ExperienceOrb — grinders and
+    // farms can leave dozens of small floating orbs ticking individually.
+    // Implemented defensively via reflection (see XpOrbMerger.java): if
+    // the orb's internal value field can't be found/updated, merging is
+    // silently disabled rather than risking any XP loss. No orb is ever
+    // discarded unless its value was successfully added to another first.
+    public boolean enableXpOrbMerging = true;
+    /** How often to run a merge pass. */
+    public int xpMergeIntervalTicks = 100; // 5s
+    /** How far around each player to scan for orbs to merge. */
+    public double xpMergeScanRadius = 48.0;
+    /** Orbs within this many blocks of each other get merged. */
+    public double xpMergeRadius = 2.0;
+
+    // --- Sound instance budget (client) ---
+    // Not distance-based — vanilla already attenuates/culls inaudible
+    // sounds. This caps how many *new* sounds can start within the same
+    // client tick, so a burst (e.g. a mob farm killing dozens of mobs at
+    // once) doesn't slam the audio engine all in one moment. Overflow
+    // sounds for that tick are simply dropped, not queued/delayed.
+    public boolean enableSoundBudget = true;
+    /** Max new sounds allowed to start per client tick. */
+    public int maxNewSoundsPerTick = 8;
 
     // --- Low-end auto-tune (client, applied once on startup) ---
     // A few vanilla visual options are meaningfully expensive and safe to

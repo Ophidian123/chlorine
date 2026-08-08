@@ -34,6 +34,7 @@ public class Chlorine implements ModInitializer {
     public void onInitialize() {
         CONFIG = ChlorineConfig.load();
         ItemMerger.register();
+        XpOrbMerger.register();
 
         LOGGER.info("Chlorine loaded — laptop performance tuning alongside Sodium & friends");
         if (CONFIG.enableDistantMobAiThrottle) {
