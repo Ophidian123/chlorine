@@ -1,0 +1,99 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	// Loom adds the Fabric/Mojang maven repos automatically.
+	maven {
+		name = "shedaniel"
+		url = "https://maven.shedaniel.me/"
+	}
+	maven {
+		name = "TerraformersMC"
+		url = "https://maven.terraformersmc.com/"
+	}
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"chlorine" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	// Minecraft 26.2 ships fully unobfuscated with Mojang's own names, so
+	// unlike older versions there's no separate `mappings loom.officialMojangMappings()`
+	// line needed here — Loom picks that up automatically for this version.
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API — this is where the stable, cross-mod-friendly hooks
+	// (tick events, etc.) that Chlorine uses come from.
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Cloth Config powers the in-game settings screen — a real dependency
+	// (not optional), since without it the screen has nothing to build
+	// itself with. Its own builder API has stayed nearly identical across
+	// years of Minecraft versions, which is why it's used here instead of
+	// hand-rolling GUI code against vanilla's freshly-reorganized Gui/Hud
+	// classes (see ChlorineConfigScreenBuilder.java for more).
+	implementation "me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}"
+
+	// Mod Menu is what actually surfaces the settings screen (the "Config"
+	// button next to Chlorine in the mod list) — genuinely optional, only
+	// used if the player has it installed, see ChlorineModMenuIntegration.java.
+	implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_${projectName}" }
+	}
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			artifactId = project.archives_base_name
+			from components.java
+		}
+	}
+	repositories {
+		// Add a repo here if you want `./gradlew publish` to push somewhere.
+	}
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "chlorine",
+  "version": "${version}",
+  "name": "Chlorine",
+  "description": "Laptop-friendly performance tuning that stacks alongside Sodium, Lithium, FerriteCore, EntityCulling and ImmediatelyFast — adaptive render distance, unfocused-window power saving, and distant-mob AI throttling.",
+  "authors": [
+    "you"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.chlorine.Chlorine"
+    ],
+    "client": [
+      "com.chlorine.client.ChlorineClient"
+    ],
+    "modmenu": [
+      "com.chlorine.client.ChlorineModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "chlorine.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*",
+    "cloth-config": "*"
+  },
+  "recommends": {
+    "sodium": "*",
+    "lithium": "*",
+    "ferritecore": "*",
+    "entityculling": "*",
+    "immediatelyfast": "*",
+    "iris": "*",
+    "modmenu": "*"
+  }
+}
