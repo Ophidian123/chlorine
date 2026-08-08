@@ -113,6 +113,13 @@ public final class ChlorineConfigScreenBuilder {
         ai.addEntry(eb.startIntSlider(Component.literal("Throttle interval (ticks)"), cfg.aiThrottleInterval, 1, 40)
                 .setSaveConsumer(v -> cfg.aiThrottleInterval = v)
                 .build());
+        ai.addEntry(eb.startBooleanToggle(Component.literal("Enable Brain-based mob throttle"), cfg.enableBrainThrottle)
+                .setTooltip(Component.literal("Same idea, for villagers/piglins/etc. — they use Brain.tick() instead of the goal selector."))
+                .setSaveConsumer(v -> cfg.enableBrainThrottle = v)
+                .build());
+        ai.addEntry(eb.startIntSlider(Component.literal("Brain throttle interval (ticks)"), cfg.brainThrottleInterval, 1, 40)
+                .setSaveConsumer(v -> cfg.brainThrottleInterval = v)
+                .build());
 
         ConfigCategory items = builder.getOrCreateCategory(Component.literal("Item Merging"));
         items.addEntry(eb.startBooleanToggle(Component.literal("Enable item merging"), cfg.enableItemMerging)
@@ -130,6 +137,33 @@ public final class ChlorineConfigScreenBuilder {
         items.addEntry(eb.startDoubleField(Component.literal("Merge radius (blocks)"), cfg.itemMergeRadius)
                 .setMin(0.5)
                 .setSaveConsumer(v -> cfg.itemMergeRadius = v)
+                .build());
+
+        ConfigCategory xp = builder.getOrCreateCategory(Component.literal("XP Orb Merging"));
+        xp.addEntry(eb.startBooleanToggle(Component.literal("Enable XP orb merging"), cfg.enableXpOrbMerging)
+                .setTooltip(Component.literal("Periodically merges nearby XP orbs near each player. Disables itself automatically (no XP lost) if it can't verify merging is safe."))
+                .setSaveConsumer(v -> cfg.enableXpOrbMerging = v)
+                .build());
+        xp.addEntry(eb.startIntField(Component.literal("Merge interval (ticks)"), cfg.xpMergeIntervalTicks)
+                .setMin(20)
+                .setSaveConsumer(v -> cfg.xpMergeIntervalTicks = v)
+                .build());
+        xp.addEntry(eb.startDoubleField(Component.literal("Scan radius (blocks)"), cfg.xpMergeScanRadius)
+                .setMin(4.0)
+                .setSaveConsumer(v -> cfg.xpMergeScanRadius = v)
+                .build());
+        xp.addEntry(eb.startDoubleField(Component.literal("Merge radius (blocks)"), cfg.xpMergeRadius)
+                .setMin(0.5)
+                .setSaveConsumer(v -> cfg.xpMergeRadius = v)
+                .build());
+
+        ConfigCategory sound = builder.getOrCreateCategory(Component.literal("Sound Budget"));
+        sound.addEntry(eb.startBooleanToggle(Component.literal("Enable sound budget"), cfg.enableSoundBudget)
+                .setTooltip(Component.literal("Caps how many new sounds can start in the same tick, to smooth out audio-engine bursts."))
+                .setSaveConsumer(v -> cfg.enableSoundBudget = v)
+                .build());
+        sound.addEntry(eb.startIntSlider(Component.literal("Max new sounds per tick"), cfg.maxNewSoundsPerTick, 1, 64)
+                .setSaveConsumer(v -> cfg.maxNewSoundsPerTick = v)
                 .build());
 
         ConfigCategory autoTune = builder.getOrCreateCategory(Component.literal("Low-End Auto-Tune"));

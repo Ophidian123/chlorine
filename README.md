@@ -11,8 +11,11 @@ and ImmediatelyFast already do that well. Instead it covers the gaps:
 |---|---|---|
 | **Adaptive perf scaler** | Watches a rolling FPS average and works down a ladder — simulation distance, then entity render distance, then particles — one tier at a time, restoring in reverse order as FPS recovers | Sodium makes each frame faster — it doesn't decide how much to simulate/draw around the player. Deliberately avoids render distance, which forces a full chunk-render-graph rebuild (a hitch) in both vanilla and Sodium whenever it changes |
 | **Laptop power saver** | Caps framerate and hides clouds while the window is unfocused/minimized | None of Sodium/Iris/EntityCulling/ImmediatelyFast address unfocused-window heat, fan noise, or battery drain |
-| **Distant mob AI throttle** | Skips goal-selector AI ticking (not physics) for mobs with no player nearby, on a staggered schedule | Tick-logic optimization, a different axis than Sodium entirely |
+| **Distant mob AI throttle** | Skips goal-selector AI ticking (not physics) for classic AI mobs (zombies, skeletons, etc.) with no player nearby, staggered | Tick-logic optimization, a different axis than Sodium entirely |
+| **Distant Brain-mob throttle** | Same idea for Brain-based mobs (villagers, piglins, hoglins, allays...) — they don't use the goal selector at all, so this is a separate mixin targeting `Brain.tick()` directly | Villages/bastions with many mobs are a well-known lag source Lithium doesn't fully own; not covered by the goal-selector throttle above since Brain mobs override that method entirely |
 | **Item entity merging** | Periodically merges nearby stackable item drops near each player | Reduces entity count/tick+render load from dense farms, beyond what vanilla's touching-only merge does |
+| **XP orb merging** | Same idea, for `ExperienceOrb` entities | Grinders/farms leave many small floating orbs; implemented defensively (reflection-based, disables itself rather than risk losing XP — see `XpOrbMerger.java`) |
+| **Sound instance budget** | Caps how many new sounds can start in the same client tick | Not about distance (vanilla already culls that) — about smoothing audio-engine bursts (e.g. a mob farm killing dozens of mobs at once), which nothing else targets |
 | **Low-end auto-tune** | On first launch, if your heap/core count look constrained, sets entity shadows, biome blend, mipmaps, particles, and ambient occlusion to lighter defaults | One-time setup nicety, not something the render-focused mods do |
 | **In-game settings screen** | A real config screen (Mod Menu → Chlorine → Config), same as Sodium/Sodium Extra/Iris have | No need to hand-edit JSON to tune anything |
 
@@ -127,6 +130,26 @@ screen:
   `startLongField`) are much lower risk — that API has stayed close to
   identical across years of Minecraft versions, which is the whole reason
   this screen is built with Cloth Config instead of raw vanilla widgets.
+- **`BrainTickThrottleMixin.java`** — targets
+  `net.minecraft.world.entity.ai.Brain#tick(ServerLevel, LivingEntity)`.
+  This has been a stable Mojmap location/signature since the Brain system
+  was introduced in 1.14, and 26.2 focused on rendering/registration
+  rather than AI, so it's a reasonable bet — but like the settings
+  screen, this hasn't been through a CI run yet.
+- **`SoundBudgetMixin.java`** — targets
+  `net.minecraft.client.sounds.SoundManager#play(SoundInstance)` and
+  `net.minecraft.client.resources.sounds.SoundInstance`. The sound system
+  hasn't changed much since its 1.13 rewrite, so this is one of the
+  lower-risk guesses here, but still unverified against 26.2.
+- **`XpOrbMerger.java`** — deliberately does *not* carry the same "if
+  this fails, fix the accessor" caveat as everything else, because it's
+  designed not to need one: it looks up `ExperienceOrb`'s value field by
+  name via reflection and permanently disables itself for the session if
+  that lookup or an update ever fails, rather than risk silently losing
+  a player's XP. If merging never seems to activate, check the log for
+  a "disabling XP orb merging" warning, then open
+  net.minecraft.world.entity.ExperienceOrb in your IDE, confirm the real
+  field name, and update `VALUE_FIELD_NAME` in the file.
 
 Everything else (Fabric API events, FabricLoader config paths, Gson) is
 Fabric-API/library-level code that doesn't depend on Minecraft's internal
@@ -143,7 +166,9 @@ src/main/java/com/chlorine/           common code (loads on client & server)
   Chlorine.java                       mod entrypoint
   ChlorineConfig.java                 JSON config
   ItemMerger.java                     periodic item-drop merging
-  mixin/MobAiThrottleMixin.java       distant-mob AI throttle
+  XpOrbMerger.java                    periodic XP orb merging (fails safe via reflection)
+  mixin/MobAiThrottleMixin.java       distant-mob AI throttle (classic goal-selector mobs)
+  mixin/BrainTickThrottleMixin.java   distant Brain-mob throttle (villagers, piglins, ...)
 
 src/client/java/com/chlorine/client/  client-only code
   ChlorineClient.java                 client entrypoint
@@ -153,6 +178,9 @@ src/client/java/com/chlorine/client/  client-only code
   OptionsCompat.java                  reflection helper for the particle-status option
   ChlorineConfigScreenBuilder.java    in-game settings screen (Cloth Config)
   ChlorineModMenuIntegration.java     hooks the screen into Mod Menu's "Config" button
+
+src/client/java/com/chlorine/mixin/client/  client-only mixins
+  SoundBudgetMixin.java                caps new sounds started per client tick
 ```
 
 ## License
