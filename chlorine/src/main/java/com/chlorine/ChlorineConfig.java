@@ -1,0 +1,171 @@
+package com.chlorine;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import net.fabricmc.loader.api.FabricLoader;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/**
+ * Plain JSON config stored at config/chlorine.json. Every field here is a
+ * public mutable field on purpose — PerformanceScaler/PowerSaver read
+ * these live. You can edit the JSON file directly, or use the in-game
+ * settings screen (Mod Menu → Chlorine → Config, powered by Cloth Config —
+ * see ChlorineConfigScreenBuilder.java), which just writes back to this
+ * same file.
+ */
+public class ChlorineConfig {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("chlorine.json");
+
+    // --- Adaptive simulation distance (client) ---
+    // Deliberately targets SIMULATION distance, not render distance.
+    // Render distance changes force a full chunk-render-graph rebuild in
+    // both vanilla and Sodium (a hitch across all visible terrain) — see
+    // PerformanceScaler.java for the full explanation. Simulation distance
+    // is a separate, server-tick-facing value (entity ticking, random
+    // ticks, block updates) with no such rebuild cost, so it can be
+    // adjusted freely and still meaningfully reduces CPU tick load, which
+    // is usually the actual bottleneck on a weak laptop CPU anyway.
+    public boolean enableAdaptiveSimulationDistance = true;
+    /** Never scale simulation distance below this. */
+    public int minSimulationDistance = 4;
+    /** Below this average FPS, simulation distance steps down. */
+    public int lowFpsThreshold = 30;
+    /** Above this average FPS, simulation distance steps back up (toward your original setting). */
+    public int targetFps = 55;
+    /** How many client ticks to average FPS over before making a decision. */
+    public int fpsCheckWindowTicks = 100;
+    /** How many chunks to move per adjustment. */
+    public int simulationDistanceStep = 2;
+    /** Minimum ticks between lowering simulation distance. */
+    public int lowerCooldownTicks = 100; // 5s — no rebuild cost, so this can react quickly
+    /** Minimum ticks between raising simulation distance back up. */
+    public int raiseCooldownTicks = 400; // 20s
+    /** If FPS is still bad once simulation distance is already at its floor, also drop particles to minimal. */
+    public boolean enableParticleScaling = true;
+    /** Also scale down entity render distance (0.5–5.0 multiplier) once simulation distance is maxed out. */
+    public boolean enableEntityDistanceScaling = true;
+    /** Floor for entity distance scaling. */
+    public double minEntityDistanceScaling = 0.5;
+    /** How much to move entity distance scaling per adjustment. */
+    public double entityDistanceScalingStep = 0.25;
+
+    // --- Laptop power saver (client) ---
+    public boolean enablePowerSaver = true;
+    /** Framerate cap applied while the window is unfocused/minimized. */
+    public int unfocusedFramerateLimit = 15;
+    /** Also hide clouds while the window is unfocused (cheap, purely cosmetic while you're not looking). */
+    public boolean hideCloudsWhenUnfocused = true;
+
+    // --- Distant mob AI throttle (server/common) ---
+    // Only affects classic goal-selector mobs (zombies, skeletons, etc.)
+    // — Brain-based mobs (villagers, piglins, ...) override
+    // customServerAiStep() entirely rather than calling super(), so this
+    // mixin never actually reaches them. See enableBrainThrottle below
+    // for the Brain-based equivalent.
+    public boolean enableDistantMobAiThrottle = true;
+    /** Mobs within this many blocks of any player always tick AI normally. */
+    public double aiActiveRadius = 48.0;
+    /** Beyond that radius, only run the AI goal selector every Nth tick. */
+    public int aiThrottleInterval = 8;
+
+    // --- Distant Brain-based mob throttle (server/common) ---
+    // Villagers, piglins, hoglins, allays, frogs, and other Brain-driven
+    // mobs don't use the classic goal selector at all — they run through
+    // Brain.tick(), which handles memory/sensor updates and behavior
+    // selection. This is often the more expensive path (villages/piglin
+    // bastions with many mobs), and it's not something Lithium or the
+    // mob AI throttle above already covers. Same shape as that throttle:
+    // skip Brain.tick() on off-ticks for Brain-owners with no player
+    // nearby, staggered by entity ID. Reuses aiActiveRadius above for the
+    // "someone's watching" distance.
+    public boolean enableBrainThrottle = true;
+    /** Beyond aiActiveRadius, only run Brain.tick() every Nth tick. */
+    public int brainThrottleInterval = 8;
+
+    // --- Item entity merging (server/common) ---
+    // Vanilla already merges touching item stacks, but dense drops (mob
+    // farms, crop farms) still end up with dozens of separate item
+    // entities each ticking and rendering individually. This periodically
+    // scans near each player and merges stackable items within range —
+    // pure gameplay-visible cleanup, no rendering/AI internals involved.
+    public boolean enableItemMerging = true;
+    /** How often to run a merge pass. */
+    public int itemMergeIntervalTicks = 100; // 5s
+    /** How far around each player to scan for items to merge. */
+    public double itemMergeScanRadius = 48.0;
+    /** Items within this many blocks of each other get merged. */
+    public double itemMergeRadius = 2.0;
+
+    // --- XP orb merging (server/common) ---
+    // Same idea as item merging, applied to ExperienceOrb — grinders and
+    // farms can leave dozens of small floating orbs ticking individually.
+    // Implemented defensively via reflection (see XpOrbMerger.java): if
+    // the orb's internal value field can't be found/updated, merging is
+    // silently disabled rather than risking any XP loss. No orb is ever
+    // discarded unless its value was successfully added to another first.
+    public boolean enableXpOrbMerging = true;
+    /** How often to run a merge pass. */
+    public int xpMergeIntervalTicks = 100; // 5s
+    /** How far around each player to scan for orbs to merge. */
+    public double xpMergeScanRadius = 48.0;
+    /** Orbs within this many blocks of each other get merged. */
+    public double xpMergeRadius = 2.0;
+
+    // --- Sound instance budget (client) ---
+    // Not distance-based — vanilla already attenuates/culls inaudible
+    // sounds. This caps how many *new* sounds can start within the same
+    // client tick, so a burst (e.g. a mob farm killing dozens of mobs at
+    // once) doesn't slam the audio engine all in one moment. Overflow
+    // sounds for that tick are simply dropped, not queued/delayed.
+    public boolean enableSoundBudget = true;
+    /** Max new sounds allowed to start per client tick. */
+    public int maxNewSoundsPerTick = 8;
+
+    // --- Low-end auto-tune (client, applied once on startup) ---
+    // A few vanilla visual options are meaningfully expensive and safe to
+    // default lower on a machine that's clearly constrained — this just
+    // sets them programmatically instead of you finding them in the menu.
+    public boolean enableLowEndAutoTune = true;
+    /** If max JVM heap is below this many MB, treat the system as memory-constrained. */
+    public long autoTuneMaxMemoryMb = 3000;
+    /** If available CPU cores is below this, treat the system as CPU-constrained. */
+    public int autoTuneMinCores = 4;
+
+    public static ChlorineConfig load() {
+        try {
+            if (Files.exists(PATH)) {
+                try (Reader reader = Files.newBufferedReader(PATH, StandardCharsets.UTF_8)) {
+                    ChlorineConfig cfg = GSON.fromJson(reader, ChlorineConfig.class);
+                    if (cfg != null) {
+                        cfg.save(); // re-write to pick up any new fields with their defaults
+                        return cfg;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            Chlorine.LOGGER.warn("Failed to read chlorine.json, regenerating defaults", e);
+        }
+
+        ChlorineConfig fresh = new ChlorineConfig();
+        fresh.save();
+        return fresh;
+    }
+
+    public void save() {
+        try {
+            Files.createDirectories(PATH.getParent());
+            try (Writer writer = Files.newBufferedWriter(PATH, StandardCharsets.UTF_8)) {
+                GSON.toJson(this, writer);
+            }
+        } catch (IOException e) {
+            Chlorine.LOGGER.warn("Failed to write chlorine.json", e);
+        }
+    }
+}
