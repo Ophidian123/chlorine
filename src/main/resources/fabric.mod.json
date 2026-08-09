@@ -3,12 +3,13 @@
   "id": "chlorine",
   "version": "${version}",
   "name": "Chlorine",
-  "description": "Laptop-friendly performance tuning that stacks alongside Sodium, Lithium, FerriteCore, EntityCulling and ImmediatelyFast — adaptive render distance, unfocused-window power saving, and distant-mob AI throttling.",
+  "description": "CPU-side performance tuning that stacks alongside Sodium, Lithium, FerriteCore, EntityCulling and ImmediatelyFast — adaptive simulation distance, distant-mob AI/Brain throttling, item and XP orb merging, sound budgeting, and more.",
   "authors": [
     "you"
   ],
   "contact": {},
   "license": "MIT",
+  "icon": "assets/chlorine/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
