@@ -16,6 +16,8 @@ and ImmediatelyFast already do that well. Instead it covers the gaps:
 | **Item entity merging** | Periodically merges nearby stackable item drops near each player | Reduces entity count/tick+render load from dense farms, beyond what vanilla's touching-only merge does |
 | **XP orb merging** | Same idea, for `ExperienceOrb` entities | Grinders/farms leave many small floating orbs; implemented defensively (reflection-based, disables itself rather than risk losing XP — see `XpOrbMerger.java`) |
 | **Sound instance budget** | Caps how many new sounds can start in the same client tick | Not about distance (vanilla already culls that) — about smoothing audio-engine bursts (e.g. a mob farm killing dozens of mobs at once), which nothing else targets |
+| **Particle spawn budget** | Same idea, for particles — caps new particles per client tick | Fireworks/potion clouds/explosions can spike frame time in one instant regardless of individual particle cost |
+| **Particle spawn budget** | Same idea, for particles — caps new particles per client tick | Fireworks, potion clouds, big explosions can spike frame time all at once regardless of any individual particle's cost |
 | **Low-end auto-tune** | On first launch, if your heap/core count look constrained, sets entity shadows, biome blend, mipmaps, particles, and ambient occlusion to lighter defaults | One-time setup nicety, not something the render-focused mods do |
 | **In-game settings screen** | A real config screen (Mod Menu → Chlorine → Config), same as Sodium/Sodium Extra/Iris have | No need to hand-edit JSON to tune anything |
 
@@ -141,6 +143,11 @@ screen:
   `net.minecraft.client.resources.sounds.SoundInstance`. The sound system
   hasn't changed much since its 1.13 rewrite, so this is one of the
   lower-risk guesses here, but still unverified against 26.2.
+- **`ParticleBudgetMixin.java`** — targets
+  `net.minecraft.client.particle.ParticleEngine#add(Particle)`. Same
+  reasoning as the sound budget — the particle engine's core "register
+  this for rendering" entry point hasn't moved much historically — lower
+  risk, still unverified against 26.2.
 - **`XpOrbMerger.java`** — deliberately does *not* carry the same "if
   this fails, fix the accessor" caveat as everything else, because it's
   designed not to need one: it looks up `ExperienceOrb`'s value field by
@@ -181,6 +188,7 @@ src/client/java/com/chlorine/client/  client-only code
 
 src/client/java/com/chlorine/mixin/client/  client-only mixins
   SoundBudgetMixin.java                caps new sounds started per client tick
+  ParticleBudgetMixin.java             caps new particles started per client tick
 ```
 
 ## License

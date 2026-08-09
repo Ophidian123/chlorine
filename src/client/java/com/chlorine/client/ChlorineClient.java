@@ -1,6 +1,7 @@
 package com.chlorine.client;
 
 import com.chlorine.Chlorine;
+import com.chlorine.mixin.client.ParticleBudgetMixin;
 import com.chlorine.mixin.client.SoundBudgetMixin;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -27,9 +28,10 @@ public class ChlorineClient implements ClientModInitializer {
             if (Chlorine.CONFIG.enablePowerSaver) {
                 powerSaver.tick(client);
             }
-            // Reset at the end of each tick so the next tick's sound
-            // budget starts clean.
+            // Reset at the end of each tick so the next tick's sound and
+            // particle budgets start clean.
             SoundBudgetMixin.chlorine$resetBudget();
+            ParticleBudgetMixin.chlorine$resetBudget();
         });
 
         Chlorine.LOGGER.info("Chlorine client-side laptop tuning active");

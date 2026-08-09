@@ -7,7 +7,8 @@
     "BrainTickThrottleMixin"
   ],
   "client": [
-    "client.SoundBudgetMixin"
+    "client.SoundBudgetMixin",
+    "client.ParticleBudgetMixin"
   ],
   "injectors": {
     "defaultRequire": 1
