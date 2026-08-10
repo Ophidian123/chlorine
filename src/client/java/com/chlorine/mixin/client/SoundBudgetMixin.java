@@ -1,6 +1,6 @@
 package com.chlorine.mixin.client;
 
-import com.chlorine.Chlorine;
+import com.chlorine.client.SoundBudget;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * a delayed hurt/death sound would be more jarring than a dropped one.
  *
  * The budget resets every client tick via ChlorineClient's existing tick
- * hook (chlorine$resetBudget()).
+ * hook (SoundBudget.reset()).
  *
  * === RISK NOTE ===
  * Targets `net.minecraft.client.sounds.SoundManager#play(SoundInstance)`
@@ -34,25 +34,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(SoundManager.class)
 public abstract class SoundBudgetMixin {
-    private static int chlorine$soundsThisTick = 0;
-
-    /** Called once per client tick from ChlorineClient. */
-    public static void chlorine$resetBudget() {
-        chlorine$soundsThisTick = 0;
-    }
-
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
     private void chlorine$limitSoundBudget(SoundInstance sound, CallbackInfo ci) {
-        if (!Chlorine.CONFIG.enableSoundBudget) {
-            return;
-        }
-
-        int budget = Math.max(1, Chlorine.CONFIG.maxNewSoundsPerTick);
-        if (chlorine$soundsThisTick >= budget) {
+        if (!SoundBudget.tryStartSound()) {
             ci.cancel();
-            return;
         }
-
-        chlorine$soundsThisTick++;
     }
 }

@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.chlorine.mixin",
+  "mixins": [
+    "MobAiThrottleMixin",
+    "BrainTickThrottleMixin"
+  ],
+  "client": [
+    "client.SoundBudgetMixin",
+    "client.ParticleBudgetMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

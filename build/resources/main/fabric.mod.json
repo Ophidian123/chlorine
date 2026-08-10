@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "chlorine",
+  "version": "0.1.7",
+  "name": "Chlorine",
+  "description": "CPU-side performance tuning that stacks alongside Sodium, Lithium, FerriteCore, EntityCulling and ImmediatelyFast — adaptive simulation distance, distant-mob AI/Brain throttling, item and XP orb merging, sound budgeting, and more.",
+  "authors": [
+    "you"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/chlorine/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.chlorine.Chlorine"
+    ],
+    "client": [
+      "com.chlorine.client.ChlorineClient"
+    ],
+    "modmenu": [
+      "com.chlorine.client.ChlorineModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "chlorine.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*",
+    "cloth-config": "*"
+  },
+  "recommends": {
+    "sodium": "*",
+    "lithium": "*",
+    "ferritecore": "*",
+    "entityculling": "*",
+    "immediatelyfast": "*",
+    "iris": "*",
+    "modmenu": "*"
+  }
+}
