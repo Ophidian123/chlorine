@@ -26,10 +26,6 @@ public class ChlorineClient implements ClientModInitializer {
             if (Chlorine.CONFIG.enablePowerSaver) {
                 powerSaver.tick(client);
             }
-            // Reset at the end of each tick so the next tick's sound and
-            // particle budgets start clean.
-            SoundBudget.reset();
-            ParticleBudget.reset();
         });
 
         Chlorine.LOGGER.info("Chlorine client-side laptop tuning active");

@@ -6,10 +6,6 @@
     "MobAiThrottleMixin",
     "BrainTickThrottleMixin"
   ],
-  "client": [
-    "client.SoundBudgetMixin",
-    "client.ParticleBudgetMixin"
-  ],
   "injectors": {
     "defaultRequire": 1
   }

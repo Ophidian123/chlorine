@@ -124,9 +124,6 @@ public class ChlorineConfig {
     // client tick, so a burst (e.g. a mob farm killing dozens of mobs at
     // once) doesn't slam the audio engine all in one moment. Overflow
     // sounds for that tick are simply dropped, not queued/delayed.
-    public boolean enableSoundBudget = true;
-    /** Max new sounds allowed to start per client tick. */
-    public int maxNewSoundsPerTick = 8;
 
     // --- Particle spawn budget (client) ---
     // Same shape as the sound budget, same reasoning: not distance-based
@@ -135,9 +132,6 @@ public class ChlorineConfig {
     // the same client tick, so a burst (fireworks, a big potion cloud, a
     // large explosion) doesn't spike frame time all at once. Overflow
     // particles for that tick are simply dropped, not queued.
-    public boolean enableParticleBudget = true;
-    /** Max new particles allowed to spawn per client tick. */
-    public int maxNewParticlesPerTick = 200;
 
     // --- Low-end auto-tune (client, applied once on startup) ---
     // A few vanilla visual options are meaningfully expensive and safe to
