@@ -157,24 +157,6 @@ public final class ChlorineConfigScreenBuilder {
                 .setSaveConsumer(v -> cfg.xpMergeRadius = v)
                 .build());
 
-        ConfigCategory sound = builder.getOrCreateCategory(Component.literal("Sound Budget"));
-        sound.addEntry(eb.startBooleanToggle(Component.literal("Enable sound budget"), cfg.enableSoundBudget)
-                .setTooltip(Component.literal("Caps how many new sounds can start in the same tick, to smooth out audio-engine bursts."))
-                .setSaveConsumer(v -> cfg.enableSoundBudget = v)
-                .build());
-        sound.addEntry(eb.startIntSlider(Component.literal("Max new sounds per tick"), cfg.maxNewSoundsPerTick, 1, 64)
-                .setSaveConsumer(v -> cfg.maxNewSoundsPerTick = v)
-                .build());
-
-        ConfigCategory particles = builder.getOrCreateCategory(Component.literal("Particle Budget"));
-        particles.addEntry(eb.startBooleanToggle(Component.literal("Enable particle budget"), cfg.enableParticleBudget)
-                .setTooltip(Component.literal("Caps how many new particles can spawn in the same tick, to smooth out bursts (fireworks, potion clouds, explosions)."))
-                .setSaveConsumer(v -> cfg.enableParticleBudget = v)
-                .build());
-        particles.addEntry(eb.startIntSlider(Component.literal("Max new particles per tick"), cfg.maxNewParticlesPerTick, 10, 2000)
-                .setSaveConsumer(v -> cfg.maxNewParticlesPerTick = v)
-                .build());
-
         ConfigCategory autoTune = builder.getOrCreateCategory(Component.literal("Low-End Auto-Tune"));
         autoTune.addEntry(eb.startBooleanToggle(Component.literal("Enable low-end auto-tune"), cfg.enableLowEndAutoTune)
                 .setTooltip(Component.literal("On first launch, lowers a few visual options if your system looks constrained."))

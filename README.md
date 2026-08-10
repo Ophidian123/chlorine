@@ -53,7 +53,7 @@ access. Two options:
   ```
   After that, `./gradlew build` works like normal.
 
-The installable output lands in `build/libs/chlorine-0.1.7.jar`. Drop that
+The installable output lands in `build/libs/chlorine-0.1.8.jar`. Drop that
 (and Fabric API) into your `mods` folder. Do not install the `-sources.jar`:
 it is source code for IDEs, not a Minecraft mod.
 
