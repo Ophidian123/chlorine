@@ -34,8 +34,8 @@ the actual "Config" button; without it you can still edit
 
 ## Building
 
-You'll need a JDK 25, **Gradle 9.5.1** installed locally, and internet
-access (Loom downloads Minecraft and dependencies on first run).
+You'll need a JDK 25 and internet access the first time (Loom downloads
+Minecraft and dependencies on first run). A Gradle wrapper is included.
 
 This repo doesn't include a Gradle wrapper (`gradlew`) — it needs a small
 binary (`gradle-wrapper.jar`) that I couldn't generate without network
@@ -53,15 +53,17 @@ access. Two options:
   ```
   After that, `./gradlew build` works like normal.
 
-The output jar lands in `build/libs/chlorine-0.1.0.jar`. Drop that (and
-Fabric API) into your `mods` folder.
+The installable output lands in `build/libs/chlorine-0.1.7.jar`. Drop that
+(and Fabric API) into your `mods` folder. Do not install the `-sources.jar`:
+it is source code for IDEs, not a Minecraft mod.
 
 ### Building via GitHub Actions instead
 
-This repo includes `.github/workflows/build.yml`, which installs Gradle
-9.5.1 directly (no wrapper needed) and builds on push. Check the
+This repo includes `.github/workflows/build.yml`, which uses the committed
+Gradle wrapper and builds on push. Check the
 **Actions** tab for the run, and download the built jar from the run's
-**Artifacts** section. If it fails, the log will point at the exact
+**Artifacts** section. The workflow uploads only the installable mod JAR,
+not the sources JAR. If it fails, the log will point at the exact
 line — paste that back and I can fix the accessor/target it's
 complaining about.
 
