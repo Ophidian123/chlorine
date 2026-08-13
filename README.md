@@ -22,7 +22,7 @@ EntityCulling, and ImmediatelyFast.
 
 Sound and particle per-tick budgets were removed because their Minecraft 26.2
 targets changed and caused mixin startup crashes. They are not included in the
-0.1.9 JAR.
+0.1.10 JAR.
 
 ## Candidate future features
 
