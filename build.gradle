@@ -20,6 +20,10 @@ repositories {
 		name = "TerraformersMC"
 		url = "https://maven.terraformersmc.com/"
 	}
+	maven {
+		name = "modrinth"
+		url = "https://api.modrinth.com/maven"
+	}
 }
 
 loom {
