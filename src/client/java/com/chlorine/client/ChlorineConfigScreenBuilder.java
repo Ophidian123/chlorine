@@ -138,6 +138,14 @@ public final class ChlorineConfigScreenBuilder {
                 .setMin(0.5)
                 .setSaveConsumer(v -> cfg.itemMergeRadius = v)
                 .build());
+        items.addEntry(eb.startIntField(Component.literal("Burst threshold (items merged)"), cfg.itemMergeBurstThreshold)
+                .setMin(1)
+                .setSaveConsumer(v -> cfg.itemMergeBurstThreshold = v)
+                .build());
+        items.addEntry(eb.startIntField(Component.literal("Burst merge interval (ticks)"), cfg.itemMergeBurstIntervalTicks)
+                .setMin(20)
+                .setSaveConsumer(v -> cfg.itemMergeBurstIntervalTicks = v)
+                .build());
 
         ConfigCategory xp = builder.getOrCreateCategory(Component.literal("XP Orb Merging"));
         xp.addEntry(eb.startBooleanToggle(Component.literal("Enable XP orb merging"), cfg.enableXpOrbMerging)
@@ -155,6 +163,28 @@ public final class ChlorineConfigScreenBuilder {
         xp.addEntry(eb.startDoubleField(Component.literal("Merge radius (blocks)"), cfg.xpMergeRadius)
                 .setMin(0.5)
                 .setSaveConsumer(v -> cfg.xpMergeRadius = v)
+                .build());
+        xp.addEntry(eb.startIntField(Component.literal("Burst threshold (orbs merged)"), cfg.xpMergeBurstThreshold)
+                .setMin(1)
+                .setSaveConsumer(v -> cfg.xpMergeBurstThreshold = v)
+                .build());
+        xp.addEntry(eb.startIntField(Component.literal("Burst merge interval (ticks)"), cfg.xpMergeBurstIntervalTicks)
+                .setMin(20)
+                .setSaveConsumer(v -> cfg.xpMergeBurstIntervalTicks = v)
+                .build());
+
+        ConfigCategory diagnostics = builder.getOrCreateCategory(Component.literal("Tick Diagnostics"));
+        diagnostics.addEntry(eb.startBooleanToggle(Component.literal("Enable tick diagnostics"), cfg.enableTickDiagnostics)
+                .setTooltip(Component.literal("Logs a warning when server work averages above the chosen threshold. Does not change gameplay."))
+                .setSaveConsumer(v -> cfg.enableTickDiagnostics = v)
+                .build());
+        diagnostics.addEntry(eb.startIntField(Component.literal("Sampling interval (ticks)"), cfg.tickDiagnosticsIntervalTicks)
+                .setMin(20)
+                .setSaveConsumer(v -> cfg.tickDiagnosticsIntervalTicks = v)
+                .build());
+        diagnostics.addEntry(eb.startDoubleField(Component.literal("Warning threshold (ms/tick)"), cfg.tickDiagnosticsWarnMs)
+                .setMin(1.0)
+                .setSaveConsumer(v -> cfg.tickDiagnosticsWarnMs = v)
                 .build());
 
         ConfigCategory autoTune = builder.getOrCreateCategory(Component.literal("Low-End Auto-Tune"));

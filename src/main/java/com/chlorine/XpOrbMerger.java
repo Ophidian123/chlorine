@@ -8,7 +8,11 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.phys.AABB;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Periodically merges nearby ExperienceOrb entities near each player —
@@ -56,24 +60,36 @@ public final class XpOrbMerger {
         if (--ticksUntilNextPass > 0) {
             return;
         }
-        ticksUntilNextPass = Math.max(20, Chlorine.CONFIG.xpMergeIntervalTicks);
-
         double scanRadius = Chlorine.CONFIG.xpMergeScanRadius;
         double mergeDistSq = Chlorine.CONFIG.xpMergeRadius * Chlorine.CONFIG.xpMergeRadius;
+        int merged = 0;
 
         for (ServerLevel level : server.getAllLevels()) {
+            Set<ExperienceOrb> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+            List<ExperienceOrb> orbs = new ArrayList<>();
             for (ServerPlayer player : level.players()) {
                 AABB box = player.getBoundingBox().inflate(scanRadius);
-                List<ExperienceOrb> orbs = level.getEntitiesOfClass(ExperienceOrb.class, box);
-                if (!mergeCluster(orbs, mergeDistSq)) {
-                    return; // disabled itself mid-pass, stop immediately
+                for (ExperienceOrb orb : level.getEntitiesOfClass(ExperienceOrb.class, box)) {
+                    if (seen.add(orb)) {
+                        orbs.add(orb);
+                    }
                 }
             }
+            int passMerged = mergeCluster(orbs, mergeDistSq);
+            if (passMerged < 0) {
+                return; // disabled itself mid-pass, stop immediately
+            }
+            merged += passMerged;
         }
+
+        ticksUntilNextPass = merged >= Math.max(1, Chlorine.CONFIG.xpMergeBurstThreshold)
+            ? Math.max(20, Chlorine.CONFIG.xpMergeBurstIntervalTicks)
+            : Math.max(20, Chlorine.CONFIG.xpMergeIntervalTicks);
     }
 
-    /** Returns false if merging had to disable itself during this pass. */
-    private boolean mergeCluster(List<ExperienceOrb> orbs, double mergeDistSq) {
+    /** Returns -1 if merging had to disable itself during this pass. */
+    private int mergeCluster(List<ExperienceOrb> orbs, double mergeDistSq) {
+        int merged = 0;
         for (int i = 0; i < orbs.size(); i++) {
             ExperienceOrb a = orbs.get(i);
             if (!a.isAlive()) {
@@ -93,16 +109,17 @@ public final class XpOrbMerger {
                 Integer valueB = getValue(b);
                 if (valueA == null || valueB == null) {
                     disableSelf("couldn't read ExperienceOrb's value field");
-                    return false;
+                    return -1;
                 }
                 if (!setValue(a, valueA + valueB)) {
                     disableSelf("couldn't write ExperienceOrb's value field");
-                    return false;
+                    return -1;
                 }
                 b.discard();
+                merged++;
             }
         }
-        return true;
+        return merged;
     }
 
     private static void disableSelf(String reason) {
