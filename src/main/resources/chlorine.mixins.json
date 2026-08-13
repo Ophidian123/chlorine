@@ -1,12 +1,14 @@
 {
-  "required": true,
-  "minVersion": "0.8",
-  "package": "com.chlorine.mixin",
-  "mixins": [
-    "MobAiThrottleMixin",
-    "BrainTickThrottleMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  }
+	"required": true,
+	"package": "com.chlorine.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"ExampleMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
 }

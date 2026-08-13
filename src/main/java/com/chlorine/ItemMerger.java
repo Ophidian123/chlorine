@@ -8,7 +8,11 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Periodically merges nearby stackable item entities near each player.
@@ -47,21 +51,31 @@ public final class ItemMerger {
         if (--ticksUntilNextPass > 0) {
             return;
         }
-        ticksUntilNextPass = Math.max(20, Chlorine.CONFIG.itemMergeIntervalTicks);
-
         double scanRadius = Chlorine.CONFIG.itemMergeScanRadius;
         double mergeDistSq = Chlorine.CONFIG.itemMergeRadius * Chlorine.CONFIG.itemMergeRadius;
+        int merged = 0;
 
         for (ServerLevel level : server.getAllLevels()) {
+            Set<ItemEntity> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+            List<ItemEntity> items = new ArrayList<>();
             for (ServerPlayer player : level.players()) {
                 AABB box = player.getBoundingBox().inflate(scanRadius);
-                List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, box);
-                mergeCluster(items, mergeDistSq);
+                for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, box)) {
+                    if (seen.add(item)) {
+                        items.add(item);
+                    }
+                }
             }
+            merged += mergeCluster(items, mergeDistSq);
         }
+
+        ticksUntilNextPass = merged >= Math.max(1, Chlorine.CONFIG.itemMergeBurstThreshold)
+            ? Math.max(20, Chlorine.CONFIG.itemMergeBurstIntervalTicks)
+            : Math.max(20, Chlorine.CONFIG.itemMergeIntervalTicks);
     }
 
-    private void mergeCluster(List<ItemEntity> items, double mergeDistSq) {
+    private int mergeCluster(List<ItemEntity> items, double mergeDistSq) {
+        int merged = 0;
         for (int i = 0; i < items.size(); i++) {
             ItemEntity a = items.get(i);
             if (!a.isAlive()) {
@@ -97,8 +111,10 @@ public final class ItemMerger {
                 stackB.shrink(moved);
                 if (stackB.isEmpty()) {
                     b.discard();
+                    merged++;
                 }
             }
         }
+        return merged;
     }
 }

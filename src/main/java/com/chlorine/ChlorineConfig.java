@@ -102,6 +102,10 @@ public class ChlorineConfig {
     public double itemMergeScanRadius = 48.0;
     /** Items within this many blocks of each other get merged. */
     public double itemMergeRadius = 2.0;
+    /** When this many items are merged in one pass, run the next pass sooner. */
+    public int itemMergeBurstThreshold = 24;
+    /** Merge interval used during a dense-item burst. */
+    public int itemMergeBurstIntervalTicks = 20;
 
     // --- XP orb merging (server/common) ---
     // Same idea as item merging, applied to ExperienceOrb — grinders and
@@ -117,6 +121,17 @@ public class ChlorineConfig {
     public double xpMergeScanRadius = 48.0;
     /** Orbs within this many blocks of each other get merged. */
     public double xpMergeRadius = 2.0;
+    /** When this many XP orbs are merged in one pass, run the next pass sooner. */
+    public int xpMergeBurstThreshold = 24;
+    /** Merge interval used during a dense-XP-orb burst. */
+    public int xpMergeBurstIntervalTicks = 20;
+
+    // --- Optional server tick diagnostics (server/common) ---
+    public boolean enableTickDiagnostics = false;
+    /** Number of server ticks to average before evaluating a warning. */
+    public int tickDiagnosticsIntervalTicks = 200;
+    /** Log when average server work exceeds this many milliseconds per tick. */
+    public double tickDiagnosticsWarnMs = 45.0;
 
     // --- Sound instance budget (client) ---
     // Not distance-based — vanilla already attenuates/culls inaudible
