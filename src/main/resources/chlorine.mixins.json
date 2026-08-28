@@ -1,14 +1,20 @@
 {
-	"required": true,
-	"package": "com.chlorine.mixin",
-	"compatibilityLevel": "JAVA_25",
-	"mixins": [
-		"ExampleMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
-	}
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.chlorine.mixin",
+  "mixins": [
+    "MobAiThrottleMixin",
+    "BrainTickThrottleMixin"
+  ],
+  "client": [
+    "client.SoundBudgetMixin",
+    "client.ParticleBudgetMixin",
+    "client.EntityAnimationThrottleMixin",
+    "client.ItemFrameThrottleMixin",
+    "client.BeaconBeamThrottleMixin",
+    "client.PortalParticleThrottleMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

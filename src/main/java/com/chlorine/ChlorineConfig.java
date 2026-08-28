@@ -34,7 +34,20 @@ public class ChlorineConfig {
     // is usually the actual bottleneck on a weak laptop CPU anyway.
     public boolean enableAdaptiveSimulationDistance = true;
     /** Never scale simulation distance below this. */
-    public int minSimulationDistance = 4;
+    public int minSimulationDistance = 1;
+    /**
+     * A hard ceiling on simulation distance, enforced independently of and
+     * respected by the adaptive scaler and the chunk-gen governor above.
+     * Off by default (existing behavior — raising toward your session's
+     * actual original value — is unchanged unless you turn this on). See
+     * SimDistanceCap.java: neither of the systems above can truly know a
+     * given value is unsustainable for your CPU long-term, since they
+     * only react to FPS/speed reading fine in the specific instant they
+     * check before raising — this is a plain, always-correct backstop.
+     */
+    public boolean enableSimDistanceCap = false;
+    /** Simulation distance will never be allowed to exceed this, regardless of any other system's target. */
+    public int maxSimulationDistance = 8;
     /** Below this average FPS, simulation distance steps down. */
     public int lowFpsThreshold = 30;
     /** Above this average FPS, simulation distance steps back up (toward your original setting). */
@@ -102,10 +115,6 @@ public class ChlorineConfig {
     public double itemMergeScanRadius = 48.0;
     /** Items within this many blocks of each other get merged. */
     public double itemMergeRadius = 2.0;
-    /** When this many items are merged in one pass, run the next pass sooner. */
-    public int itemMergeBurstThreshold = 24;
-    /** Merge interval used during a dense-item burst. */
-    public int itemMergeBurstIntervalTicks = 20;
 
     // --- XP orb merging (server/common) ---
     // Same idea as item merging, applied to ExperienceOrb — grinders and
@@ -121,17 +130,6 @@ public class ChlorineConfig {
     public double xpMergeScanRadius = 48.0;
     /** Orbs within this many blocks of each other get merged. */
     public double xpMergeRadius = 2.0;
-    /** When this many XP orbs are merged in one pass, run the next pass sooner. */
-    public int xpMergeBurstThreshold = 24;
-    /** Merge interval used during a dense-XP-orb burst. */
-    public int xpMergeBurstIntervalTicks = 20;
-
-    // --- Optional server tick diagnostics (server/common) ---
-    public boolean enableTickDiagnostics = false;
-    /** Number of server ticks to average before evaluating a warning. */
-    public int tickDiagnosticsIntervalTicks = 200;
-    /** Log when average server work exceeds this many milliseconds per tick. */
-    public double tickDiagnosticsWarnMs = 45.0;
 
     // --- Sound instance budget (client) ---
     // Not distance-based — vanilla already attenuates/culls inaudible
@@ -139,6 +137,9 @@ public class ChlorineConfig {
     // client tick, so a burst (e.g. a mob farm killing dozens of mobs at
     // once) doesn't slam the audio engine all in one moment. Overflow
     // sounds for that tick are simply dropped, not queued/delayed.
+    public boolean enableSoundBudget = true;
+    /** Max new sounds allowed to start per client tick. */
+    public int maxNewSoundsPerTick = 8;
 
     // --- Particle spawn budget (client) ---
     // Same shape as the sound budget, same reasoning: not distance-based
@@ -147,6 +148,9 @@ public class ChlorineConfig {
     // the same client tick, so a burst (fireworks, a big potion cloud, a
     // large explosion) doesn't spike frame time all at once. Overflow
     // particles for that tick are simply dropped, not queued.
+    public boolean enableParticleBudget = true;
+    /** Max new particles allowed to spawn per client tick. */
+    public int maxNewParticlesPerTick = 200;
 
     // --- Low-end auto-tune (client, applied once on startup) ---
     // A few vanilla visual options are meaningfully expensive and safe to
@@ -157,6 +161,104 @@ public class ChlorineConfig {
     public long autoTuneMaxMemoryMb = 3000;
     /** If available CPU cores is below this, treat the system as CPU-constrained. */
     public int autoTuneMinCores = 4;
+
+    // --- Distant entity animation throttle (client) ---
+    // Visible entities beyond this distance still render, but their
+    // skeletal animation (limb swing, head rotation, wing flapping) is
+    // updated less frequently — holding the last pose for a few frames
+    // instead of recalculating every frame. Imperceptible at distance,
+    // meaningful CPU savings in areas with many visible mobs.
+    public boolean enableEntityAnimationThrottle = true;
+    /** Beyond this many blocks, throttle animation updates. */
+    public double entityAnimThrottleDistance = 48.0;
+    /** Only recalculate animation every Nth frame for distant entities. */
+    public int entityAnimThrottleInterval = 4;
+
+    // --- Item frame render throttle (client) ---
+    // Item frames (especially those holding maps) are surprisingly
+    // expensive to render — each one is a full entity render with its own
+    // item model or map texture. Storage rooms and trading halls with
+    // hundreds of frames cause major frametime spikes. This skips
+    // rendering item frame contents entirely beyond a configurable
+    // distance.
+    public boolean enableItemFrameThrottle = true;
+    /** Beyond this many blocks, skip rendering item frame contents. */
+    public double itemFrameRenderDistance = 32.0;
+    /** Beyond that distance, only re-extract render state (item/map contents) every Nth frame — never fully stops, so state is never left permanently stale. */
+    public int itemFrameThrottleInterval = 20;
+
+    // --- Beacon beam & portal particle throttle (client) ---
+    // Beacon beams are tall, multi-layered animated vertex geometry
+    // rendered every frame regardless of distance. Nether portal blocks
+    // continuously spawn dense ambient particles. Both are purely
+    // cosmetic at distance and safe to cull.
+    public boolean enableBeaconThrottle = true;
+    /** Beyond this many blocks, skip rendering beacon beams. */
+    public double beaconThrottleDistance = 96.0;
+    /** Beyond this many blocks, skip nether portal ambient particles. */
+    public boolean enablePortalParticleThrottle = true;
+    public double portalParticleThrottleDistance = 32.0;
+
+    // --- Elytra / fast-travel chunk generation governor (client) ---
+    // Flying fast with an Elytra or Riptide trident causes heavy CPU
+    // thread congestion as the server/client spam chunk loading requests.
+    // This temporarily lowers simulation distance while traveling above
+    // a speed threshold, reducing tick-side load and prioritizing smooth
+    // frame delivery over maximum loaded area. Same proven mechanism as
+    // PerformanceScaler's adaptive simulation distance, just triggered
+    // by speed instead of FPS.
+    public boolean enableChunkGenGovernor = true;
+    /** Speed in blocks/tick above which the governor activates. */
+    public double chunkGenSpeedThreshold = 1.2;
+    /** How many chunks to reduce simulation distance by while fast-traveling. */
+    public int chunkGenSimDistReduction = 4;
+    /** How many ticks after slowing down before restoring simulation distance. */
+    public int chunkGenRestoreCooldownTicks = 100;
+
+    // --- Lightmap texture refresh throttle: DISABLED ---
+    // See disabled-mixins/README.md — the mixin implementing this doesn't
+    // currently compile (targets a class that appears to have been
+    // restructured in 26.1's lighting rewrite) and has been pulled out of
+    // the build. These fields are intentionally removed rather than left
+    // as dead config, since a toggle that silently does nothing is worse
+    // than no toggle. Re-add here once the mixin is fixed and re-enabled.
+
+    // --- Distance-based sound pre-cull (client) ---
+    // Complements the existing per-tick sound budget. Instead of capping
+    // count, this drops sounds whose distance-attenuated volume falls
+    // below a threshold BEFORE they enter the OpenAL pipeline. Dense
+    // farms with hundreds of quiet distant mob sounds never even reach
+    // the audio engine.
+    public boolean enableSoundPreCull = true;
+    /** Sounds whose estimated volume (after distance attenuation) is below
+     *  this fraction (0.0–1.0) are dropped before reaching OpenAL. */
+    public double soundPreCullVolumeThreshold = 0.05;
+
+    // --- Server tick-health diagnostics (server/common) ---
+    // Pure observability, no behavior change: periodically logs a warning
+    // if average server tick time creeps above a threshold, so slowdowns
+    // show up in the log instead of only being felt as vague lag. Added
+    // by ServerTickDiagnostics.java, which was present in an earlier
+    // upload but never wired up to config fields — this was a genuine
+    // compile error (referenced fields that didn't exist) until now.
+    public boolean enableTickDiagnostics = true;
+    /** How many server ticks to average over before checking/logging. */
+    public int tickDiagnosticsIntervalTicks = 200; // 10s
+    /** Log a warning if the average tick time (ms) is at or above this. Vanilla's budget per tick is 50ms. */
+    public double tickDiagnosticsWarnMs = 55.0;
+
+    // --- Sub-vanilla simulation distance override (server/common): EXPERIMENTAL ---
+    // See SimDistanceOverride.java for the full explanation — this is the
+    // least-certain internal target in the whole project. Enabled by default
+    // so the effective server simulation distance can reach 1 chunk.
+    // Writes directly to ChunkMap rather than fighting the client-side
+    // Options slider's 5-32 validation range, so it works independently
+    // of (and shouldn't be combined with) enableAdaptiveSimulationDistance,
+    // enableChunkGenGovernor, and enableSimDistanceCap above, which all
+    // operate through that Options value instead.
+    public boolean enableSimDistanceOverride = true;
+    /** Target simulation distance, allowed below vanilla's normal minimum of 5. */
+    public int overrideSimulationDistance = 1;
 
     public static ChlorineConfig load() {
         try {

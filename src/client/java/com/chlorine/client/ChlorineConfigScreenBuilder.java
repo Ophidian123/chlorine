@@ -43,6 +43,16 @@ public final class ChlorineConfigScreenBuilder {
 
         ConfigEntryBuilder eb = builder.entryBuilder();
 
+        ConfigCategory simCap = builder.getOrCreateCategory(Component.literal("Simulation Distance Cap"));
+        simCap.addEntry(eb.startBooleanToggle(Component.literal("Enable hard cap"), cfg.enableSimDistanceCap)
+                .setTooltip(Component.literal("A hard ceiling simulation distance can never exceed, regardless of what the adaptive scaler or chunk-gen governor try to raise it to. Off by default."))
+                .setSaveConsumer(v -> cfg.enableSimDistanceCap = v)
+                .build());
+        simCap.addEntry(eb.startIntSlider(Component.literal("Max simulation distance"), cfg.maxSimulationDistance, 2, 32)
+                .setTooltip(Component.literal("Simulation distance will never be allowed above this, even while raising back toward your original setting."))
+                .setSaveConsumer(v -> cfg.maxSimulationDistance = v)
+                .build());
+
         ConfigCategory scaler = builder.getOrCreateCategory(Component.literal("Adaptive Scaler"));
         scaler.addEntry(eb.startBooleanToggle(Component.literal("Enable adaptive simulation distance"), cfg.enableAdaptiveSimulationDistance)
                 .setTooltip(Component.literal("Lowers/raises simulation distance based on FPS. No render-graph rebuild, unlike render distance."))
@@ -138,14 +148,6 @@ public final class ChlorineConfigScreenBuilder {
                 .setMin(0.5)
                 .setSaveConsumer(v -> cfg.itemMergeRadius = v)
                 .build());
-        items.addEntry(eb.startIntField(Component.literal("Burst threshold (items merged)"), cfg.itemMergeBurstThreshold)
-                .setMin(1)
-                .setSaveConsumer(v -> cfg.itemMergeBurstThreshold = v)
-                .build());
-        items.addEntry(eb.startIntField(Component.literal("Burst merge interval (ticks)"), cfg.itemMergeBurstIntervalTicks)
-                .setMin(20)
-                .setSaveConsumer(v -> cfg.itemMergeBurstIntervalTicks = v)
-                .build());
 
         ConfigCategory xp = builder.getOrCreateCategory(Component.literal("XP Orb Merging"));
         xp.addEntry(eb.startBooleanToggle(Component.literal("Enable XP orb merging"), cfg.enableXpOrbMerging)
@@ -164,27 +166,23 @@ public final class ChlorineConfigScreenBuilder {
                 .setMin(0.5)
                 .setSaveConsumer(v -> cfg.xpMergeRadius = v)
                 .build());
-        xp.addEntry(eb.startIntField(Component.literal("Burst threshold (orbs merged)"), cfg.xpMergeBurstThreshold)
-                .setMin(1)
-                .setSaveConsumer(v -> cfg.xpMergeBurstThreshold = v)
+
+        ConfigCategory sound = builder.getOrCreateCategory(Component.literal("Sound Budget"));
+        sound.addEntry(eb.startBooleanToggle(Component.literal("Enable sound budget"), cfg.enableSoundBudget)
+                .setTooltip(Component.literal("Caps how many new sounds can start in the same tick, to smooth out audio-engine bursts."))
+                .setSaveConsumer(v -> cfg.enableSoundBudget = v)
                 .build());
-        xp.addEntry(eb.startIntField(Component.literal("Burst merge interval (ticks)"), cfg.xpMergeBurstIntervalTicks)
-                .setMin(20)
-                .setSaveConsumer(v -> cfg.xpMergeBurstIntervalTicks = v)
+        sound.addEntry(eb.startIntSlider(Component.literal("Max new sounds per tick"), cfg.maxNewSoundsPerTick, 1, 64)
+                .setSaveConsumer(v -> cfg.maxNewSoundsPerTick = v)
                 .build());
 
-        ConfigCategory diagnostics = builder.getOrCreateCategory(Component.literal("Tick Diagnostics"));
-        diagnostics.addEntry(eb.startBooleanToggle(Component.literal("Enable tick diagnostics"), cfg.enableTickDiagnostics)
-                .setTooltip(Component.literal("Logs a warning when server work averages above the chosen threshold. Does not change gameplay."))
-                .setSaveConsumer(v -> cfg.enableTickDiagnostics = v)
+        ConfigCategory particles = builder.getOrCreateCategory(Component.literal("Particle Budget"));
+        particles.addEntry(eb.startBooleanToggle(Component.literal("Enable particle budget"), cfg.enableParticleBudget)
+                .setTooltip(Component.literal("Caps how many new particles can spawn in the same tick, to smooth out bursts (fireworks, potion clouds, explosions)."))
+                .setSaveConsumer(v -> cfg.enableParticleBudget = v)
                 .build());
-        diagnostics.addEntry(eb.startIntField(Component.literal("Sampling interval (ticks)"), cfg.tickDiagnosticsIntervalTicks)
-                .setMin(20)
-                .setSaveConsumer(v -> cfg.tickDiagnosticsIntervalTicks = v)
-                .build());
-        diagnostics.addEntry(eb.startDoubleField(Component.literal("Warning threshold (ms/tick)"), cfg.tickDiagnosticsWarnMs)
-                .setMin(1.0)
-                .setSaveConsumer(v -> cfg.tickDiagnosticsWarnMs = v)
+        particles.addEntry(eb.startIntSlider(Component.literal("Max new particles per tick"), cfg.maxNewParticlesPerTick, 10, 2000)
+                .setSaveConsumer(v -> cfg.maxNewParticlesPerTick = v)
                 .build());
 
         ConfigCategory autoTune = builder.getOrCreateCategory(Component.literal("Low-End Auto-Tune"));
@@ -198,6 +196,108 @@ public final class ChlorineConfigScreenBuilder {
                 .build());
         autoTune.addEntry(eb.startIntSlider(Component.literal("Min core count threshold"), cfg.autoTuneMinCores, 1, 32)
                 .setSaveConsumer(v -> cfg.autoTuneMinCores = v)
+                .build());
+
+        ConfigCategory animThrottle = builder.getOrCreateCategory(Component.literal("Entity Animation Throttle"));
+        animThrottle.addEntry(eb.startBooleanToggle(Component.literal("Enable entity animation throttle"), cfg.enableEntityAnimationThrottle)
+                .setTooltip(Component.literal("Updates skeletal animation less frequently for distant entities."))
+                .setSaveConsumer(v -> cfg.enableEntityAnimationThrottle = v)
+                .build());
+        animThrottle.addEntry(eb.startDoubleField(Component.literal("Throttle distance (blocks)"), cfg.entityAnimThrottleDistance)
+                .setMin(4.0)
+                .setSaveConsumer(v -> cfg.entityAnimThrottleDistance = v)
+                .build());
+        animThrottle.addEntry(eb.startIntSlider(Component.literal("Throttle interval (frames)"), cfg.entityAnimThrottleInterval, 2, 20)
+                .setSaveConsumer(v -> cfg.entityAnimThrottleInterval = v)
+                .build());
+
+        ConfigCategory frameThrottle = builder.getOrCreateCategory(Component.literal("Item Frame Throttle"));
+        frameThrottle.addEntry(eb.startBooleanToggle(Component.literal("Enable item frame throttle"), cfg.enableItemFrameThrottle)
+                .setTooltip(Component.literal("Throttles item frame content re-extraction beyond a configurable distance (periodic, never fully stops)."))
+                .setSaveConsumer(v -> cfg.enableItemFrameThrottle = v)
+                .build());
+        frameThrottle.addEntry(eb.startDoubleField(Component.literal("Render distance (blocks)"), cfg.itemFrameRenderDistance)
+                .setMin(4.0)
+                .setSaveConsumer(v -> cfg.itemFrameRenderDistance = v)
+                .build());
+        frameThrottle.addEntry(eb.startIntSlider(Component.literal("Throttle interval (frames)"), cfg.itemFrameThrottleInterval, 1, 100)
+                .setSaveConsumer(v -> cfg.itemFrameThrottleInterval = v)
+                .build());
+
+        ConfigCategory beaconThrottle = builder.getOrCreateCategory(Component.literal("Beacon & Portal Throttle"));
+        beaconThrottle.addEntry(eb.startBooleanToggle(Component.literal("Enable beacon throttle"), cfg.enableBeaconThrottle)
+                .setTooltip(Component.literal("Skips rendering beacon beams beyond a configurable distance."))
+                .setSaveConsumer(v -> cfg.enableBeaconThrottle = v)
+                .build());
+        beaconThrottle.addEntry(eb.startDoubleField(Component.literal("Beacon throttle distance (blocks)"), cfg.beaconThrottleDistance)
+                .setMin(16.0)
+                .setSaveConsumer(v -> cfg.beaconThrottleDistance = v)
+                .build());
+        beaconThrottle.addEntry(eb.startBooleanToggle(Component.literal("Enable portal particle throttle"), cfg.enablePortalParticleThrottle)
+                .setTooltip(Component.literal("Skips nether portal ambient particles beyond a configurable distance."))
+                .setSaveConsumer(v -> cfg.enablePortalParticleThrottle = v)
+                .build());
+        beaconThrottle.addEntry(eb.startDoubleField(Component.literal("Portal particle throttle distance (blocks)"), cfg.portalParticleThrottleDistance)
+                .setMin(4.0)
+                .setSaveConsumer(v -> cfg.portalParticleThrottleDistance = v)
+                .build());
+
+        ConfigCategory chunkGenGov = builder.getOrCreateCategory(Component.literal("Chunk Gen Governor"));
+        chunkGenGov.addEntry(eb.startBooleanToggle(Component.literal("Enable chunk gen governor"), cfg.enableChunkGenGovernor)
+                .setTooltip(Component.literal("Temporarily lowers simulation distance while fast-traveling (e.g. Elytra) to prioritize frame delivery."))
+                .setSaveConsumer(v -> cfg.enableChunkGenGovernor = v)
+                .build());
+        chunkGenGov.addEntry(eb.startDoubleField(Component.literal("Speed threshold (blocks/tick)"), cfg.chunkGenSpeedThreshold)
+                .setMin(0.5)
+                .setSaveConsumer(v -> cfg.chunkGenSpeedThreshold = v)
+                .build());
+        chunkGenGov.addEntry(eb.startIntSlider(Component.literal("Sim dist reduction (chunks)"), cfg.chunkGenSimDistReduction, 1, 16)
+                .setSaveConsumer(v -> cfg.chunkGenSimDistReduction = v)
+                .build());
+        chunkGenGov.addEntry(eb.startIntField(Component.literal("Restore cooldown (ticks)"), cfg.chunkGenRestoreCooldownTicks)
+                .setMin(20)
+                .setSaveConsumer(v -> cfg.chunkGenRestoreCooldownTicks = v)
+                .build());
+
+        // NOTE: the "Lightmap Throttle" category that used to be here was
+        // removed — the mixin it configured doesn't compile (see
+        // disabled-mixins/README.md) and its config fields were removed
+        // from ChlorineConfig.java for the same reason a toggle that does
+        // nothing shouldn't ship. This screen previously still referenced
+        // the removed fields, which was itself a compile error.
+
+        ConfigCategory soundPreCull = builder.getOrCreateCategory(Component.literal("Sound Pre-Cull"));
+        soundPreCull.addEntry(eb.startBooleanToggle(Component.literal("Enable sound pre-cull"), cfg.enableSoundPreCull)
+                .setTooltip(Component.literal("Drops sounds whose distance-attenuated volume is below a threshold before they hit OpenAL."))
+                .setSaveConsumer(v -> cfg.enableSoundPreCull = v)
+                .build());
+        soundPreCull.addEntry(eb.startDoubleField(Component.literal("Volume threshold (0.0 - 1.0)"), cfg.soundPreCullVolumeThreshold)
+                .setMin(0.01)
+                .setMax(0.5)
+                .setSaveConsumer(v -> cfg.soundPreCullVolumeThreshold = v)
+                .build());
+
+        ConfigCategory tickDiagnostics = builder.getOrCreateCategory(Component.literal("Tick Diagnostics"));
+        tickDiagnostics.addEntry(eb.startBooleanToggle(Component.literal("Enable tick diagnostics"), cfg.enableTickDiagnostics)
+                .setTooltip(Component.literal("Pure observability, no behavior change — logs a warning if average server tick time creeps above a threshold."))
+                .setSaveConsumer(v -> cfg.enableTickDiagnostics = v)
+                .build());
+        tickDiagnostics.addEntry(eb.startIntField(Component.literal("Averaging window (ticks)"), cfg.tickDiagnosticsIntervalTicks)
+                .setMin(20)
+                .setSaveConsumer(v -> cfg.tickDiagnosticsIntervalTicks = v)
+                .build());
+        tickDiagnostics.addEntry(eb.startDoubleField(Component.literal("Warn threshold (ms/tick)"), cfg.tickDiagnosticsWarnMs)
+                .setMin(50.0)
+                .setSaveConsumer(v -> cfg.tickDiagnosticsWarnMs = v)
+                .build());
+
+        ConfigCategory simOverride = builder.getOrCreateCategory(Component.literal("Sub-Vanilla Sim Distance (Experimental)"));
+        simOverride.addEntry(eb.startBooleanToggle(Component.literal("Enable override"), cfg.enableSimDistanceOverride)
+                .setTooltip(Component.literal("Writes directly to the server's ChunkMap so simulation distance can go below vanilla's 5-chunk minimum, down to 1 chunk. Don't run alongside the adaptive scaler, chunk-gen governor, or hard cap above — see the log for a warning if you do."))
+                .setSaveConsumer(v -> cfg.enableSimDistanceOverride = v)
+                .build());
+        simOverride.addEntry(eb.startIntSlider(Component.literal("Override value"), cfg.overrideSimulationDistance, 1, 32)
+                .setSaveConsumer(v -> cfg.overrideSimulationDistance = v)
                 .build());
 
         return builder.build();

@@ -40,6 +40,10 @@ import java.util.Deque;
  * Targets `options.simulationDistance()` and `options.entityDistanceScaling()`,
  * both OptionInstance<T>. If either doesn't compile against 26.2, open
  * net.minecraft.client.Options in your IDE and adjust the accessor name.
+ *
+ * Shares its notion of "the user's real original simulation distance"
+ * with ChunkGenGovernor via SimDistanceBaseline.java, since both classes
+ * independently adjust the same option — see that file for why.
  */
 public class PerformanceScaler {
     private final Deque<Integer> fpsSamples = new ArrayDeque<>();
@@ -73,7 +77,7 @@ public class PerformanceScaler {
         OptionInstance<Integer> simOption = client.options.simulationDistance();
         int simCurrent = simOption.get();
         if (originalSimulationDistance < 0) {
-            originalSimulationDistance = simCurrent;
+            originalSimulationDistance = SimDistanceBaseline.getOrCapture(simCurrent);
         }
         boolean simAtFloor = simCurrent <= Chlorine.CONFIG.minSimulationDistance;
 
@@ -129,13 +133,28 @@ public class PerformanceScaler {
                 ticksSinceRaise = 0;
                 fpsSamples.clear();
                 Chlorine.LOGGER.debug("FPS averaging {}, raising entity distance scaling {} -> {}", avg, entityCurrent, next);
-            } else if (simCurrent < originalSimulationDistance) {
-                int next = Math.min(originalSimulationDistance, simCurrent + Math.max(1, Chlorine.CONFIG.simulationDistanceStep));
+            } else if (simCurrent < effectiveSimCeiling()) {
+                int next = Math.min(effectiveSimCeiling(), simCurrent + Math.max(1, Chlorine.CONFIG.simulationDistanceStep));
                 simOption.set(next);
                 ticksSinceRaise = 0;
                 fpsSamples.clear();
+                SimDistanceBaseline.clearIfAtOrAboveBaseline(next);
                 Chlorine.LOGGER.debug("FPS averaging {}, raising simulation distance {} -> {}", avg, simCurrent, next);
             }
         }
+    }
+
+    /**
+     * The highest simulation distance this scaler will ever raise toward
+     * — the user's real original value, but never above the configured
+     * hard cap (SimDistanceCap.java) if one is enabled. Without this,
+     * the scaler would keep trying to raise past the cap every tick,
+     * only for SimDistanceCap to immediately lower it back down again.
+     */
+    private int effectiveSimCeiling() {
+        if (Chlorine.CONFIG.enableSimDistanceCap) {
+            return Math.min(originalSimulationDistance, Chlorine.CONFIG.maxSimulationDistance);
+        }
+        return originalSimulationDistance;
     }
 }

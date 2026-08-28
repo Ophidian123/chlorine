@@ -1,6 +1,7 @@
 package com.chlorine.mixin.client;
 
 import com.chlorine.Chlorine;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,6 +44,27 @@ public abstract class SoundBudgetMixin {
 
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
     private void chlorine$limitSoundBudget(SoundInstance sound, CallbackInfo ci) {
+        // --- Distance-based pre-cull ---
+        if (Chlorine.CONFIG.enableSoundPreCull) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && sound.getAttenuation() == SoundInstance.Attenuation.LINEAR) {
+                double dx = mc.player.getX() - sound.getX();
+                double dy = mc.player.getY() - sound.getY();
+                double dz = mc.player.getZ() - sound.getZ();
+                double distSq = dx * dx + dy * dy + dz * dz;
+                // Vanilla linear attenuation: volume drops to 0 at 16 blocks
+                // by default. Estimate effective volume as:
+                //   volume * max(0, 1 - sqrt(distSq) / 16)
+                // If that's below the threshold, drop before OpenAL.
+                double dist = Math.sqrt(distSq);
+                double effectiveVolume = sound.getVolume() * Math.max(0.0, 1.0 - dist / 16.0);
+                if (effectiveVolume < Chlorine.CONFIG.soundPreCullVolumeThreshold) {
+                    ci.cancel();
+                    return;
+                }
+            }
+        }
+
         if (!Chlorine.CONFIG.enableSoundBudget) {
             return;
         }

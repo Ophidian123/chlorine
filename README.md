@@ -1,107 +1,208 @@
 # Chlorine
 
-Chlorine is a laptop-friendly Fabric performance mod for **Minecraft 26.2**.
-It is designed to complement—not replace—Sodium, Iris, Lithium, FerriteCore,
-EntityCulling, and ImmediatelyFast.
+Chlorine is a **Fabric performance and power-management mod for Minecraft
+26.2**. It targets CPU-side simulation work, bursty entity effects, and
+laptop power usage while leaving chunk rendering and renderer internals to
+specialized mods.
 
-## Current features
+Current release: **0.1.11**
 
-| Feature | Purpose | Why it does not overlap the recommended mods |
-|---|---|---|
-| Adaptive performance scaler | Reduces simulation distance, then entity distance and particle settings when sustained FPS is low; restores them slowly when FPS recovers. | Sodium optimizes rendering, but does not automatically choose lower-cost gameplay/visual settings. |
-| Unfocused-window power saver | Reduces FPS and optionally hides clouds while Minecraft is unfocused. | This targets battery use, heat, and fan noise rather than rendering implementation. |
-| Distant classic-mob AI throttle | Runs goal-selector updates less often when no player is nearby. | Lithium optimizes vanilla logic without changing timing; Chlorine deliberately trades distant, unobserved AI responsiveness for fewer ticks. |
-| Distant Brain-mob throttle | Applies the same idea to Brain-driven mobs such as villagers and piglins. | Covers a separate AI path from classic goal selectors. |
-| Adaptive item merging | Combines compatible nearby item entities and switches to a faster cleanup cadence after a dense merge pass. | Reduces farm entity buildup without touching rendering, culling, or memory internals. |
-| Adaptive XP-orb merging | Combines nearby experience orbs, using the same burst cleanup and disabling itself safely if it cannot verify an update. | Reduces entity count; it does not touch rendering or memory internals. |
-| Tick diagnostics | Optionally logs sustained server-work time above a chosen threshold. | Measures possible tick pressure; it does not overlap or replace Lithium's logic optimizations. |
-| Low-end auto-tune | On first launch, applies lower-cost visual defaults when the available heap or CPU core count is constrained. | This is an opt-in settings policy, not a renderer rewrite. |
-| Mod Menu configuration | Provides an in-game settings screen through Cloth Config and Mod Menu. | Configuration only. |
+## What it does
 
-### Deliberately removed in 0.1.8
+### Adaptive client tuning
 
-Sound and particle per-tick budgets were removed because their Minecraft 26.2
-targets changed and caused mixin startup crashes. They are not included in the
-0.1.10 JAR.
+- **Adaptive simulation distance:** monitors a rolling FPS average and lowers
+  simulation distance when performance falls below the configured threshold.
+  It raises the value again after a longer recovery cooldown.
+- **Entity-distance scaling:** can reduce the entity-distance multiplier after
+  simulation distance reaches its configured floor.
+- **Particle fallback:** can reduce the particle setting as a last resort.
+- **Simulation-distance cap:** optionally prevents other tuning systems from
+  raising simulation distance above a fixed ceiling.
+- **Fast-travel chunk governor:** temporarily lowers simulation distance while
+  moving quickly, such as with an Elytra or Riptide trident, then restores it
+  after a cooldown.
 
-## Candidate future features
+Chlorine intentionally changes **simulation distance**, not render distance.
+Render-distance changes can rebuild the entire chunk render graph and cause a
+large hitch; simulation distance instead targets server ticking, entity
+updates, random ticks, and block updates.
 
-These are ideas to profile and implement one at a time. None duplicate Sodium's
-renderer, Iris shader pipeline, FerriteCore's memory optimizations,
-ImmediatelyFast's immediate-mode batching, or EntityCulling's visibility work.
+### Server and gameplay-side optimization
 
-| Candidate | Benefit | Compatibility notes |
-|---|---|---|
-| Chunk-generation travel governor | During sustained generation lag, temporarily lower simulation distance while flying/exploring, then restore it. | Avoids touching Sodium's chunk renderer; should never alter render distance automatically. |
-| Configurable item/XP merge filters | Let players exempt named items, equipment, or particular item types from merging. | Improves gameplay safety rather than raw throughput; no overlap. |
-| Idle singleplayer saver | Detect a stationary, unfocused, or paused player and lower the integrated server's simulation cost. | Must never apply on multiplayer clients or while a world is actively being played. |
-| Tick-time diagnostics | Optional lightweight warnings that identify whether entity count, block entities, or chunk generation appears to be the bottleneck. | Measures and reports; does not replace Lithium's optimizations. |
-| Low-end preset profiles | Offer conservative, balanced, and battery-saver presets for the existing safe settings. | Settings orchestration only; no renderer/memory/culling overlap. |
+- **Distant classic-mob AI throttle:** staggers goal-selector AI for mobs such
+  as zombies and skeletons when no player is nearby. Physics and nearby mobs
+  are not throttled.
+- **Distant Brain-mob throttle:** applies the same idea directly to
+  `Brain.tick()` for villagers, piglins, hoglins, allays, frogs, and other
+  Brain-driven mobs.
+- **Item merging:** periodically combines compatible nearby item entities
+  around online players.
+- **XP orb merging:** combines nearby experience orbs. The implementation
+  verifies the internal value update before discarding an orb and disables
+  itself for the session if that operation cannot be verified.
+- **Server tick diagnostics:** optionally logs a warning when average server
+  tick time exceeds the configured threshold. This is observability only; it
+  does not alter server behavior.
+- **Sub-vanilla simulation distance:** writes a simulation-distance value
+  directly to the server `ChunkMap`, allowing a minimum of 1 chunk instead of
+  vanilla's 5-chunk minimum. It is enabled by default and should not be
+  combined with the client-side simulation-distance scaler, chunk governor, or
+  hard cap.
 
-Not planned: chunk rendering rewrites (Sodium), shaders (Iris), memory-data
-deduplication (FerriteCore), visibility culling (EntityCulling), or GUI/entity
-draw batching (ImmediatelyFast). Lithium already covers broad, behavior-preserving
-game-logic optimization; Chlorine should only add clearly opt-in policy changes
-where a player accepts the tradeoff.
+### Client effects and power saving
 
-## Dependencies
+- **Unfocused-window power saver:** caps FPS while the game window is
+  unfocused or minimized and can hide clouds during that period.
+- **Sound budget:** limits how many new sounds may start in one client tick,
+  smoothing bursts from farms, combat, or other events.
+- **Sound pre-cull:** drops very quiet distance-attenuated sounds before they
+  reach the audio engine.
+- **Particle budget:** limits particle creation per client tick to smooth
+  fireworks, explosions, potion clouds, and similar bursts.
+- **Distant entity-animation throttle:** updates animation state less often for
+  distant visible entities.
+- **Item-frame throttle:** reduces distant item-frame content extraction while
+  continuing periodic refreshes so state does not become permanently stale.
+- **Beacon and portal throttles:** skips distant beacon beams and Nether portal
+  ambient particles when enabled.
+- **Low-end auto-tune:** once per launch, detects constrained memory or CPU
+  availability and applies lighter vanilla visual defaults.
 
-- Required: Fabric Loader, Fabric API, and Cloth Config API.
-- Optional: Mod Menu (for the Config button).
-- Recommended alongside Chlorine: Sodium, Iris, Lithium, FerriteCore,
-  EntityCulling, and ImmediatelyFast.
+All features are independently configurable and can be disabled without
+removing the mod.
 
-## Building
+## Requirements
 
-Use JDK 25. The Gradle wrapper downloads required build dependencies on the
-first run.
+- Minecraft **26.2**
+- Fabric Loader **0.17.0 or newer**
+- Fabric API
+- Java **25 or newer**
+- [Cloth Config API](https://modrinth.com/mod/cloth-config) (required)
+
+[Mod Menu](https://modrinth.com/mod/modmenu) is optional. When installed, it
+adds Chlorine's **Config** button to the mod list. Chlorine is designed to
+coexist with Sodium, Lithium, FerriteCore, EntityCulling, ImmediatelyFast,
+and Iris; none of those mods is required.
+
+## Installation
+
+1. Install Fabric Loader for Minecraft 26.2.
+2. Install Fabric API and Cloth Config API.
+3. Place `chlorine-0.1.11.jar` in the instance's `mods` directory.
+4. Optionally install Mod Menu for the in-game configuration screen.
+
+The configuration file is created at:
+
+```text
+config/chlorine.json
+```
+
+Changes made through the Cloth Config screen are written to the same file.
+
+## Configuration overview
+
+The in-game screen groups settings into:
+
+- Simulation Distance Cap
+- Adaptive Scaler
+- Power Saver
+- Mob AI Throttle
+- Item Merging
+- XP Orb Merging
+- Sound Budget
+- Particle Budget
+- Low-End Auto-Tune
+- Entity Animation Throttle
+- Item Frame Throttle
+- Beacon & Portal Throttle
+- Chunk Gen Governor
+- Sound Pre-Cull
+- Tick Diagnostics
+- Sub-Vanilla Sim Distance
+
+Important interactions:
+
+- The adaptive scaler, chunk governor, and simulation-distance cap all operate
+  on the client simulation-distance option.
+- The sub-vanilla override writes to the server directly and is enabled by
+  default. Disable the other three systems when using it; Chlorine logs a
+  warning if conflicting options are enabled.
+- Lowering AI throttle intervals improves responsiveness but reduces the
+  possible CPU savings. Start with the defaults and adjust gradually.
+
+## Building from source
+
+This repository includes the Gradle wrapper. Use:
 
 ```bash
-# Windows PowerShell
-.\gradlew.bat build
-
-# macOS/Linux
 ./gradlew build
 ```
 
-The installable mod is `build/libs/chlorine-0.1.10.jar`. Do **not** install the
-`-sources.jar`; it is for IDEs only.
+On Windows:
 
-If this repository is uploaded with its outer `chlorine-mod-src_4` directory,
-use the root workflow at `.github/workflows/build-chlorine.yml`; it explicitly
-builds the nested `chlorine` project and uploads only the installable JAR.
+```powershell
+.\gradlew.bat build
+```
 
-## 0.1.10 additions
+The build requires Java 25 and internet access for Minecraft, Fabric, and
+library dependencies. Output jars are written to:
 
-- **Adaptive merge bursts:** After a pass merges 24 or more item entities or
-  XP orbs, Chlorine performs the next pass after 20 ticks instead of the
-  normal interval. It also de-duplicates entities visible to overlapping
-  player scan areas, avoiding repeated work on multiplayer farms.
-- **Optional tick diagnostics:** Disabled by default. When enabled, it logs
-  an average server-work time over a configurable sampling window; it does
-  not alter gameplay or performance settings automatically.
+```text
+build/libs/
+```
 
-## Configuration
+The GitHub Actions workflow in `.github/workflows/build.yml` builds with
+Temurin Java 25 and Gradle 9.5.1, then uploads the jars as workflow
+artifacts.
 
-On first launch Chlorine writes `config/chlorine.json`. Key controls include:
+## Project structure
 
-- Adaptive scaling: `lowFpsThreshold`, `targetFps`, `minSimulationDistance`,
-  `simulationDistanceStep`, `enableEntityDistanceScaling`, and
-  `enableParticleScaling`.
-- Power saver: `unfocusedFramerateLimit` and `hideCloudsWhenUnfocused`.
-- AI throttles: `aiActiveRadius`, `aiThrottleInterval`, and
-  `brainThrottleInterval`.
-- Merging: the `itemMerge...` / `xpMerge...` settings, including the
-  `...BurstThreshold` and `...BurstIntervalTicks` controls.
-- Diagnostics: `enableTickDiagnostics`, `tickDiagnosticsIntervalTicks`, and
-  `tickDiagnosticsWarnMs`.
-- Auto-tune: `autoTuneMaxMemoryMb` and `autoTuneMinCores`.
+```text
+src/main/java/com/chlorine/
+  Chlorine.java                 Common Fabric entrypoint
+  ChlorineConfig.java           JSON configuration and defaults
+  ItemMerger.java               Nearby item-entity merging
+  XpOrbMerger.java              Defensive XP-orb merging
+  ServerTickDiagnostics.java    Server tick-health logging
+  SimDistanceOverride.java      Experimental server-side override
+  mixin/                        Common AI mixins
 
-Every `enable...` setting can be set to `false` to turn that feature off.
+src/client/java/com/chlorine/client/
+  ChlorineClient.java            Client entrypoint and tick orchestration
+  PerformanceScaler.java         FPS-driven simulation tuning
+  PowerSaver.java                Unfocused-window power saving
+  ChunkGenGovernor.java          Fast-travel tuning
+  SimDistanceCap.java            Simulation-distance ceiling
+  LowEndAutoTune.java            One-time low-end defaults
+  ChlorineConfigScreenBuilder.java
+                                  Cloth Config screen
+
+src/client/java/com/chlorine/mixin/client/
+                                  Client sound, particle, animation,
+                                  item-frame, beacon, and portal hooks
+```
+
+The mod uses Fabric lifecycle events for periodic work and narrowly scoped
+Mixin injections for Minecraft internals. It does not replace the renderer,
+rewrite chunk storage, or add blocks, items, entities, or world-generation
+content.
+
+## Known limitations
+
+- Performance results depend on the world, entity count, hardware, and other
+  installed mods. The defaults are conservative but are not universal
+  benchmarks.
+- Throttling distant AI intentionally trades some background simulation
+  frequency for lower CPU usage.
+- The experimental simulation-distance override depends on Minecraft's
+  internal `ChunkMap` implementation and may require updates when 26.2
+  mappings or internals change.
+- `LightmapThrottleMixin` is parked in `disabled-mixins/` and is not part of
+  the build because the targeted lighting class changed in the 26.x rewrite.
+- XP orb merging fails safe: if the orb value field cannot be read or written,
+  the feature disables itself for that session instead of risking XP loss.
 
 ## License
 
-All Rights Reserved (ARR)
-
-Copyright (c) 2026 Chlorine contributors. This software is proprietary and confidential.
-Unauthorized copying, modification, distribution, or use of this software in any form is strictly prohibited.
+All Rights Reserved. See [LICENSE](LICENSE).
