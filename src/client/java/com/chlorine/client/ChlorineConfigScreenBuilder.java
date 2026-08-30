@@ -293,7 +293,7 @@ public final class ChlorineConfigScreenBuilder {
 
         ConfigCategory simOverride = builder.getOrCreateCategory(Component.literal("Sub-Vanilla Sim Distance (Experimental)"));
         simOverride.addEntry(eb.startBooleanToggle(Component.literal("Enable override"), cfg.enableSimDistanceOverride)
-                .setTooltip(Component.literal("Writes directly to the server's ChunkMap so simulation distance can go below vanilla's 5-chunk minimum, down to 1 chunk. Don't run alongside the adaptive scaler, chunk-gen governor, or hard cap above — see the log for a warning if you do."))
+                .setTooltip(Component.literal("Writes directly to the server's chunk distance manager so simulation distance can go below vanilla's 5-chunk minimum, down to 1 chunk. Don't run alongside the adaptive scaler, chunk-gen governor, or hard cap above — see the log for a warning if you do."))
                 .setSaveConsumer(v -> cfg.enableSimDistanceOverride = v)
                 .build());
         simOverride.addEntry(eb.startIntSlider(Component.literal("Override value"), cfg.overrideSimulationDistance, 1, 32)

@@ -21,8 +21,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * that tick are simply dropped, not queued or delayed to a later tick —
  * a delayed hurt/death sound would be more jarring than a dropped one.
  *
- * The budget resets every client tick via ChlorineClient's existing tick
- * hook (chlorine$resetBudget()).
+ * The budget resets on its own every ~50ms (one tick's worth of real
+ * time) — see the self-contained windowing logic below. An earlier
+ * version used a public static reset method called externally from
+ * ChlorineClient's tick hook, which Mixin rejects outright: a mixin
+ * class may not add a new non-private static method to its target,
+ * since that would silently graft a whole new externally-callable API
+ * onto a vanilla class. This crashed the game on startup
+ * ("InvalidMixinException: ... contains non-private static method").
+ * Self-contained time-windowing avoids needing any external call at all.
  *
  * === RISK NOTE ===
  * Targets `net.minecraft.client.sounds.SoundManager#play(SoundInstance)`
@@ -35,12 +42,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(SoundManager.class)
 public abstract class SoundBudgetMixin {
-    private static int chlorine$soundsThisTick = 0;
-
-    /** Called once per client tick from ChlorineClient. */
-    public static void chlorine$resetBudget() {
-        chlorine$soundsThisTick = 0;
-    }
+    private static int chlorine$soundsThisWindow = 0;
+    private static long chlorine$windowStartMs = 0L;
 
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
     private void chlorine$limitSoundBudget(SoundInstance sound, CallbackInfo ci) {
@@ -69,12 +72,18 @@ public abstract class SoundBudgetMixin {
             return;
         }
 
+        long now = System.currentTimeMillis();
+        if (now - chlorine$windowStartMs >= 50) {
+            chlorine$windowStartMs = now;
+            chlorine$soundsThisWindow = 0;
+        }
+
         int budget = Math.max(1, Chlorine.CONFIG.maxNewSoundsPerTick);
-        if (chlorine$soundsThisTick >= budget) {
+        if (chlorine$soundsThisWindow >= budget) {
             ci.cancel();
             return;
         }
 
-        chlorine$soundsThisTick++;
+        chlorine$soundsThisWindow++;
     }
 }

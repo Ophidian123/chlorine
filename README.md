@@ -5,7 +5,7 @@ Chlorine is a **Fabric performance and power-management mod for Minecraft
 laptop power usage while leaving chunk rendering and renderer internals to
 specialized mods.
 
-Current release: **0.1.11**
+Current release: **0.1.13**
 
 ## What it does
 
@@ -45,10 +45,10 @@ updates, random ticks, and block updates.
   tick time exceeds the configured threshold. This is observability only; it
   does not alter server behavior.
 - **Sub-vanilla simulation distance:** writes a simulation-distance value
-  directly to the server `ChunkMap`, allowing a minimum of 1 chunk instead of
+  directly to the server `ServerChunkCache`, allowing a minimum of 1 chunk instead of
   vanilla's 5-chunk minimum. It is enabled by default and should not be
-  combined with the client-side simulation-distance scaler, chunk governor, or
-  hard cap.
+  combined with the client-side simulation-distance scaler, chunk governor,
+  or hard cap.
 
 ### Client effects and power saving
 
@@ -89,7 +89,7 @@ and Iris; none of those mods is required.
 
 1. Install Fabric Loader for Minecraft 26.2.
 2. Install Fabric API and Cloth Config API.
-3. Place `chlorine-0.1.11.jar` in the instance's `mods` directory.
+3. Place `chlorine-0.1.13.jar` in the instance's `mods` directory.
 4. Optionally install Mod Menu for the in-game configuration screen.
 
 The configuration file is created at:
@@ -195,13 +195,45 @@ content.
   benchmarks.
 - Throttling distant AI intentionally trades some background simulation
   frequency for lower CPU usage.
-- The experimental simulation-distance override depends on Minecraft's
-  internal `ChunkMap` implementation and may require updates when 26.2
-  mappings or internals change.
+- The simulation-distance override uses Minecraft 26.2's
+  `ServerChunkCache.setSimulationDistance(int)` API and may require updates
+  if that internal server API changes.
 - `LightmapThrottleMixin` is parked in `disabled-mixins/` and is not part of
   the build because the targeted lighting class changed in the 26.x rewrite.
 - XP orb merging fails safe: if the orb value field cannot be read or written,
   the feature disables itself for that session instead of risking XP loss.
+
+## Known issues
+
+**Fixed in 0.1.12 — startup crash.** `SoundBudgetMixin` and
+`ParticleBudgetMixin` each exposed a `public static` reset method meant to be
+called once per tick from `ChlorineClient`. Mixin rejects this outright — a
+mixin class may not add a new non-private static method to its target, since
+that would silently graft a new public API onto a vanilla class — and the
+game crashed on launch (`InvalidMixinException: ... contains non-private
+static method`). Both mixins now reset their own budget internally on a
+rolling ~50ms window instead of needing an external call.
+
+**Fixed previously — item loss.** `ItemMerger` used to mutate the `ItemStack`
+returned by `getItem()` in place and assume that persisted back to the
+entity, which isn't guaranteed. If it didn't, the growing stack's gain never
+landed while the shrinking stack still got discarded once its *local* copy
+read empty — net effect, items silently deleted rather than merged. Fixed by
+committing changes via `entity.setItem(...)` explicitly. If you ran a build
+before this fix, "missing items" reports from that period were likely this,
+not user error.
+
+**Unresolved — entities disappearing during fast travel.** Reports of mobs
+(and possibly item drops) vanishing during elytra flight over a long
+sightline (a deep ravine), visible for a few seconds before disappearing.
+Leading suspect is `ChunkGenGovernor`'s simulation-distance drop happening in
+one abrupt step rather than gradually; secondary suspect is
+`EntityAnimationThrottleMixin`/`ItemFrameThrottleMixin` sharing a render
+entry point with EntityCulling. Not yet root-caused. If you can reliably
+reproduce it, try disabling `enableChunkGenGovernor` and separately
+`enableEntityAnimationThrottle` to help isolate which one is responsible —
+and note that `enableSimDistanceOverride` (see above) touches the same
+subsystem this bug lives in, so disable it while isolating that issue.
 
 ## License
 

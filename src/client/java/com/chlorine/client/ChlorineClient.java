@@ -1,8 +1,6 @@
 package com.chlorine.client;
 
 import com.chlorine.Chlorine;
-import com.chlorine.mixin.client.ParticleBudgetMixin;
-import com.chlorine.mixin.client.SoundBudgetMixin;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
@@ -36,10 +34,14 @@ public class ChlorineClient implements ClientModInitializer {
             // Runs last so it always gets the final say, regardless of
             // what either system above just tried to set.
             cap.tick(client);
-            // Reset at the end of each tick so the next tick's sound and
-            // particle budgets start clean.
-            SoundBudgetMixin.chlorine$resetBudget();
-            ParticleBudgetMixin.chlorine$resetBudget();
+            // NOTE: SoundBudgetMixin/ParticleBudgetMixin used to be reset
+            // from here via a public static method each of them exposed.
+            // That crashed the game outright — Mixin doesn't allow a
+            // mixin class to add a new non-private static method to its
+            // target, since that's effectively grafting a new public API
+            // onto a vanilla class. Both mixins now reset themselves
+            // internally on a rolling ~50ms real-time window instead, so
+            // no external call is needed here anymore.
         });
 
         Chlorine.LOGGER.info("Chlorine client-side laptop tuning active");

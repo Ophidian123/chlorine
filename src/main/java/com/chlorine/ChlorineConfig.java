@@ -249,9 +249,9 @@ public class ChlorineConfig {
 
     // --- Sub-vanilla simulation distance override (server/common): EXPERIMENTAL ---
     // See SimDistanceOverride.java for the full explanation — this is the
-    // least-certain internal target in the whole project. Enabled by default
-    // so the effective server simulation distance can reach 1 chunk.
-    // Writes directly to ChunkMap rather than fighting the client-side
+    // The server-side target is stable in the 26.2 API, so this is enabled by
+    // default and the effective server simulation distance can reach 1 chunk.
+    // Writes directly to ServerChunkCache rather than fighting the client-side
     // Options slider's 5-32 validation range, so it works independently
     // of (and shouldn't be combined with) enableAdaptiveSimulationDistance,
     // enableChunkGenGovernor, and enableSimDistanceCap above, which all

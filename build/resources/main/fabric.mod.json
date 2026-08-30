@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "id": "chlorine",
-  "version": "0.1.10",
+  "version": "0.1.13",
   "name": "Chlorine",
   "description": "CPU-side performance tuning that stacks alongside Sodium, Lithium, FerriteCore, EntityCulling and ImmediatelyFast — adaptive simulation distance, distant-mob AI/Brain throttling, item and XP orb merging, sound budgeting, and more.",
   "authors": [
     "you"
   ],
   "contact": {},
-  "license": "MIT",
+  "license": "ARR",
   "icon": "assets/chlorine/icon.png",
   "environment": "*",
   "entrypoints": {

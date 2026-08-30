@@ -17,8 +17,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * time all at once regardless of any individual particle's cost.
  * Overflow particles for that tick are simply dropped, not queued.
  *
- * The budget resets every client tick via ChlorineClient's existing tick
- * hook (chlorine$resetBudget()), same as the sound budget.
+ * The budget resets on its own every ~50ms (one tick's worth of real
+ * time) — see the self-contained windowing logic below. An earlier
+ * version used a public static reset method called externally from
+ * ChlorineClient's tick hook, which Mixin rejects outright: a mixin
+ * class may not add a new non-private static method to its target,
+ * since that would silently graft a whole new externally-callable API
+ * onto a vanilla class. This crashed the game on startup
+ * ("InvalidMixinException: ... contains non-private static method") —
+ * same bug as SoundBudgetMixin had, fixed the same way.
  *
  * === RISK NOTE ===
  * Targets `net.minecraft.client.particle.ParticleEngine#add(Particle)`.
@@ -32,12 +39,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(ParticleEngine.class)
 public abstract class ParticleBudgetMixin {
-    private static int chlorine$particlesThisTick = 0;
-
-    /** Called once per client tick from ChlorineClient. */
-    public static void chlorine$resetBudget() {
-        chlorine$particlesThisTick = 0;
-    }
+    private static int chlorine$particlesThisWindow = 0;
+    private static long chlorine$windowStartMs = 0L;
 
     @Inject(method = "add", at = @At("HEAD"), cancellable = true)
     private void chlorine$limitParticleBudget(Particle particle, CallbackInfo ci) {
@@ -45,12 +48,18 @@ public abstract class ParticleBudgetMixin {
             return;
         }
 
+        long now = System.currentTimeMillis();
+        if (now - chlorine$windowStartMs >= 50) {
+            chlorine$windowStartMs = now;
+            chlorine$particlesThisWindow = 0;
+        }
+
         int budget = Math.max(1, Chlorine.CONFIG.maxNewParticlesPerTick);
-        if (chlorine$particlesThisTick >= budget) {
+        if (chlorine$particlesThisWindow >= budget) {
             ci.cancel();
             return;
         }
 
-        chlorine$particlesThisTick++;
+        chlorine$particlesThisWindow++;
     }
 }
