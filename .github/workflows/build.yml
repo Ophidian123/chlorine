@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,3 +35,11 @@ jobs:
           name: chlorine-jar
           path: build/libs/*.jar
           if-no-files-found: warn
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/*.jar
+          name: Chlorine ${{ github.ref_name }}
+          generate_release_notes: true
