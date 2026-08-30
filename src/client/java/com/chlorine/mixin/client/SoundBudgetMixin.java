@@ -4,10 +4,11 @@ import com.chlorine.Chlorine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.client.sounds.SoundEngine;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Caps how many new sounds can start within the same client tick.
@@ -46,7 +47,10 @@ public abstract class SoundBudgetMixin {
     private static long chlorine$windowStartMs = 0L;
 
     @Inject(method = "play", at = @At("HEAD"), cancellable = true)
-    private void chlorine$limitSoundBudget(SoundInstance sound, CallbackInfo ci) {
+    private void chlorine$limitSoundBudget(
+            SoundInstance sound,
+            CallbackInfoReturnable<SoundEngine.PlayResult> cir
+    ) {
         // --- Distance-based pre-cull ---
         if (Chlorine.CONFIG.enableSoundPreCull) {
             Minecraft mc = Minecraft.getInstance();
@@ -62,7 +66,7 @@ public abstract class SoundBudgetMixin {
                 double dist = Math.sqrt(distSq);
                 double effectiveVolume = sound.getVolume() * Math.max(0.0, 1.0 - dist / 16.0);
                 if (effectiveVolume < Chlorine.CONFIG.soundPreCullVolumeThreshold) {
-                    ci.cancel();
+                    cir.setReturnValue(SoundEngine.PlayResult.NOT_STARTED);
                     return;
                 }
             }
@@ -80,7 +84,7 @@ public abstract class SoundBudgetMixin {
 
         int budget = Math.max(1, Chlorine.CONFIG.maxNewSoundsPerTick);
         if (chlorine$soundsThisWindow >= budget) {
-            ci.cancel();
+            cir.setReturnValue(SoundEngine.PlayResult.NOT_STARTED);
             return;
         }
 
