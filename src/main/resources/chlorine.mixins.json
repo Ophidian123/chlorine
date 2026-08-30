@@ -8,6 +8,7 @@
   ],
   "client": [
     "client.SoundBudgetMixin",
+    "client.SoundPreCullMixin",
     "client.ParticleBudgetMixin",
     "client.EntityAnimationThrottleMixin",
     "client.ItemFrameThrottleMixin",
