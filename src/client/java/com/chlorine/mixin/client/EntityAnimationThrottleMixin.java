@@ -47,7 +47,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntityRenderer.class)
 public abstract class EntityAnimationThrottleMixin {
 
-    @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V", at = @At("TAIL"))
     private void chlorine$throttleDistantAnimation(
             LivingEntity entity,
             LivingEntityRenderState state,
@@ -73,11 +73,11 @@ public abstract class EntityAnimationThrottleMixin {
         int interval = Math.max(1, Chlorine.CONFIG.entityAnimThrottleInterval);
         long frame = mc.level != null ? mc.level.getGameTime() : 0;
         if ((frame + entity.getId()) % interval != 0) {
-            // Skip extraction this frame. The render state object keeps
-            // whatever it had from the last frame it WAS extracted on —
-            // that's the "held pose" effect, achieved without touching
-            // the entity's own animation state at all.
-            ci.cancel();
+            // Zero the walk animation speed on skip-frames for distant entities.
+            // This skips limb swing calculations during model setup without
+            // leaving the newly-created LivingEntityRenderState uninitialized
+            // or causing a NullPointerException in EntityRenderDispatcher.
+            state.walkAnimationSpeed = 0.0f;
         }
     }
 }
