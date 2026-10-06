@@ -65,7 +65,7 @@ public class ChunkGenGovernor {
             // Activate: capture the shared baseline and lower
             originalSimDistance = SimDistanceBaseline.getOrCapture(simCurrent);
             int reduced = Math.max(
-                Chlorine.CONFIG.minSimulationDistance,
+                SimDistanceBaseline.optionFloor(Chlorine.CONFIG.minSimulationDistance),
                 simCurrent - Math.max(1, Chlorine.CONFIG.chunkGenSimDistReduction)
             );
             if (reduced < simCurrent) {

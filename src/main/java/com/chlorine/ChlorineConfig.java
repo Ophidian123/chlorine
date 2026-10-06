@@ -162,31 +162,6 @@ public class ChlorineConfig {
     /** If available CPU cores is below this, treat the system as CPU-constrained. */
     public int autoTuneMinCores = 4;
 
-    // --- Distant entity animation throttle (client) ---
-    // Visible entities beyond this distance still render, but their
-    // skeletal animation (limb swing, head rotation, wing flapping) is
-    // updated less frequently — holding the last pose for a few frames
-    // instead of recalculating every frame. Imperceptible at distance,
-    // meaningful CPU savings in areas with many visible mobs.
-    public boolean enableEntityAnimationThrottle = true;
-    /** Beyond this many blocks, throttle animation updates. */
-    public double entityAnimThrottleDistance = 48.0;
-    /** Only recalculate animation every Nth frame for distant entities. */
-    public int entityAnimThrottleInterval = 4;
-
-    // --- Item frame render throttle (client) ---
-    // Item frames (especially those holding maps) are surprisingly
-    // expensive to render — each one is a full entity render with its own
-    // item model or map texture. Storage rooms and trading halls with
-    // hundreds of frames cause major frametime spikes. This skips
-    // rendering item frame contents entirely beyond a configurable
-    // distance.
-    public boolean enableItemFrameThrottle = true;
-    /** Beyond this many blocks, skip rendering item frame contents. */
-    public double itemFrameRenderDistance = 32.0;
-    /** Beyond that distance, only re-extract render state (item/map contents) every Nth frame — never fully stops, so state is never left permanently stale. */
-    public int itemFrameThrottleInterval = 20;
-
     // --- Beacon beam & portal particle throttle (client) ---
     // Beacon beams are tall, multi-layered animated vertex geometry
     // rendered every frame regardless of distance. Nether portal blocks
@@ -246,19 +221,6 @@ public class ChlorineConfig {
     public int tickDiagnosticsIntervalTicks = 200; // 10s
     /** Log a warning if the average tick time (ms) is at or above this. Vanilla's budget per tick is 50ms. */
     public double tickDiagnosticsWarnMs = 55.0;
-
-    // --- Sub-vanilla simulation distance override (server/common): EXPERIMENTAL ---
-    // See SimDistanceOverride.java for the full explanation — this is the
-    // least-certain internal target in the whole project. Enabled by default
-    // so the effective server simulation distance can reach 1 chunk.
-    // Writes directly to ChunkMap rather than fighting the client-side
-    // Options slider's 5-32 validation range, so it works independently
-    // of (and shouldn't be combined with) enableAdaptiveSimulationDistance,
-    // enableChunkGenGovernor, and enableSimDistanceCap above, which all
-    // operate through that Options value instead.
-    public boolean enableSimDistanceOverride = true;
-    /** Target simulation distance, allowed below vanilla's normal minimum of 5. */
-    public int overrideSimulationDistance = 1;
 
     public static ChlorineConfig load() {
         try {

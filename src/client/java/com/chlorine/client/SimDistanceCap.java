@@ -34,7 +34,10 @@ public class SimDistanceCap {
         int current = simOption.get();
         // Never let the cap be set below the adaptive scaler's own floor
         // — that would just make the two fight each other every tick.
-        int max = Math.max(Chlorine.CONFIG.minSimulationDistance, Chlorine.CONFIG.maxSimulationDistance);
+        int max = Math.max(
+            SimDistanceBaseline.optionFloor(Chlorine.CONFIG.minSimulationDistance),
+            Chlorine.CONFIG.maxSimulationDistance
+        );
 
         if (current > max) {
             simOption.set(max);
