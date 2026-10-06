@@ -76,9 +76,11 @@ public final class ItemMerger {
     }
 
     private void mergeCluster(List<ItemEntity> items, double mergeDistSq) {
+        EntitySpatialIndex<ItemEntity> spatialIndex = new EntitySpatialIndex<>(items, Math.sqrt(mergeDistSq));
         for (int i = 0; i < items.size(); i++) {
             ItemEntity a = items.get(i);
             if (!a.isAlive()) {
+                spatialIndex.remove(a);
                 continue;
             }
             ItemStack stackA = a.getItem();
@@ -86,9 +88,9 @@ public final class ItemMerger {
                 continue;
             }
 
-            for (int j = i + 1; j < items.size(); j++) {
-                ItemEntity b = items.get(j);
+            for (ItemEntity b : spatialIndex.nearbyAfter(i)) {
                 if (!b.isAlive()) {
+                    spatialIndex.remove(b);
                     continue;
                 }
                 ItemStack stackB = b.getItem();
@@ -125,6 +127,7 @@ public final class ItemMerger {
 
                 if (newStackB.isEmpty()) {
                     b.discard();
+                    spatialIndex.remove(b);
                 } else if (newStackB.getCount() == stackB.getCount()) {
                     // Sanity check: shrink() should have changed the count.
                     // If it somehow didn't, don't discard anything and

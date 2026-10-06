@@ -74,15 +74,17 @@ public final class XpOrbMerger {
 
     /** Returns false if merging had to disable itself during this pass. */
     private boolean mergeCluster(List<ExperienceOrb> orbs, double mergeDistSq) {
+        EntitySpatialIndex<ExperienceOrb> spatialIndex = new EntitySpatialIndex<>(orbs, Math.sqrt(mergeDistSq));
         for (int i = 0; i < orbs.size(); i++) {
             ExperienceOrb a = orbs.get(i);
             if (!a.isAlive()) {
+                spatialIndex.remove(a);
                 continue;
             }
 
-            for (int j = i + 1; j < orbs.size(); j++) {
-                ExperienceOrb b = orbs.get(j);
+            for (ExperienceOrb b : spatialIndex.nearbyAfter(i)) {
                 if (!b.isAlive()) {
+                    spatialIndex.remove(b);
                     continue;
                 }
                 if (a.distanceToSqr(b) > mergeDistSq) {
@@ -100,6 +102,7 @@ public final class XpOrbMerger {
                     return false;
                 }
                 b.discard();
+                spatialIndex.remove(b);
             }
         }
         return true;

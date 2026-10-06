@@ -1,6 +1,7 @@
 package com.chlorine.mixin.client;
 
 import com.chlorine.Chlorine;
+import com.chlorine.client.ClientEffectBudgets;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,8 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * time all at once regardless of any individual particle's cost.
  * Overflow particles for that tick are simply dropped, not queued.
  *
- * The budget resets every client tick via ChlorineClient's existing tick
- * hook (chlorine$resetBudget()), same as the sound budget.
+ * The budget resets every client tick through ClientEffectBudgets, same as
+ * the sound budget.
  *
  * === RISK NOTE ===
  * Targets `net.minecraft.client.particle.ParticleEngine#add(Particle)`.
@@ -32,25 +33,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(ParticleEngine.class)
 public abstract class ParticleBudgetMixin {
-    private static int chlorine$particlesThisTick = 0;
-
-    /** Called once per client tick from ChlorineClient. */
-    public static void chlorine$resetBudget() {
-        chlorine$particlesThisTick = 0;
-    }
-
     @Inject(method = "add", at = @At("HEAD"), cancellable = true)
     private void chlorine$limitParticleBudget(Particle particle, CallbackInfo ci) {
         if (!Chlorine.CONFIG.enableParticleBudget) {
             return;
         }
 
-        int budget = Math.max(1, Chlorine.CONFIG.maxNewParticlesPerTick);
-        if (chlorine$particlesThisTick >= budget) {
+        if (!ClientEffectBudgets.tryConsumeParticle(Chlorine.CONFIG.maxNewParticlesPerTick)) {
             ci.cancel();
             return;
         }
-
-        chlorine$particlesThisTick++;
     }
 }
