@@ -44,12 +44,6 @@ updates, random ticks, and block updates.
 - **Server tick diagnostics:** optionally logs a warning when average server
   tick time exceeds the configured threshold. This is observability only; it
   does not alter server behavior.
-- **Sub-vanilla simulation distance:** writes a simulation-distance value
-  directly to the server `ChunkMap`, allowing a minimum of 1 chunk instead of
-  vanilla's 5-chunk minimum. It is enabled by default and should not be
-  combined with the client-side simulation-distance scaler, chunk governor, or
-  hard cap.
-
 ### Client effects and power saving
 
 - **Unfocused-window power saver:** caps FPS while the game window is
@@ -60,10 +54,6 @@ updates, random ticks, and block updates.
   reach the audio engine.
 - **Particle budget:** limits particle creation per client tick to smooth
   fireworks, explosions, potion clouds, and similar bursts.
-- **Distant entity-animation throttle:** updates animation state less often for
-  distant visible entities.
-- **Item-frame throttle:** reduces distant item-frame content extraction while
-  continuing periodic refreshes so state does not become permanently stale.
 - **Beacon and portal throttles:** skips distant beacon beams and Nether portal
   ambient particles when enabled.
 - **Low-end auto-tune:** once per launch, detects constrained memory or CPU
@@ -113,21 +103,18 @@ The in-game screen groups settings into:
 - Sound Budget
 - Particle Budget
 - Low-End Auto-Tune
-- Entity Animation Throttle
-- Item Frame Throttle
 - Beacon & Portal Throttle
 - Chunk Gen Governor
 - Sound Pre-Cull
 - Tick Diagnostics
-- Sub-Vanilla Sim Distance
 
 Important interactions:
 
 - The adaptive scaler, chunk governor, and simulation-distance cap all operate
   on the client simulation-distance option.
-- The sub-vanilla override writes to the server directly and is enabled by
-  default. Disable the other three systems when using it; Chlorine logs a
-  warning if conflicting options are enabled.
+- Minecraft validates the client simulation-distance option to a minimum of
+  5 chunks. Chlorine clamps its adaptive scaler, chunk governor, and cap to
+  that supported minimum.
 - Lowering AI throttle intervals improves responsiveness but reduces the
   possible CPU savings. Start with the defaults and adjust gradually.
 
@@ -165,7 +152,6 @@ src/main/java/com/chlorine/
   ItemMerger.java               Nearby item-entity merging
   XpOrbMerger.java              Defensive XP-orb merging
   ServerTickDiagnostics.java    Server tick-health logging
-  SimDistanceOverride.java      Experimental server-side override
   mixin/                        Common AI mixins
 
 src/client/java/com/chlorine/client/
@@ -179,8 +165,7 @@ src/client/java/com/chlorine/client/
                                   Cloth Config screen
 
 src/client/java/com/chlorine/mixin/client/
-                                  Client sound, particle, animation,
-                                  item-frame, beacon, and portal hooks
+                                  Client sound, particle, beacon, and portal hooks
 ```
 
 The mod uses Fabric lifecycle events for periodic work and narrowly scoped
@@ -195,9 +180,6 @@ content.
   benchmarks.
 - Throttling distant AI intentionally trades some background simulation
   frequency for lower CPU usage.
-- The experimental simulation-distance override depends on Minecraft's
-  internal `ChunkMap` implementation and may require updates when 26.2
-  mappings or internals change.
 - `LightmapThrottleMixin` is parked in `disabled-mixins/` and is not part of
   the build because the targeted lighting class changed in the 26.x rewrite.
 - XP orb merging fails safe: if the orb value field cannot be read or written,

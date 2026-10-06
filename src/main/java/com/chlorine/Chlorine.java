@@ -36,7 +36,6 @@ public class Chlorine implements ModInitializer {
         ItemMerger.register();
         XpOrbMerger.register();
         ServerTickDiagnostics.register();
-        SimDistanceOverride.register();
 
         LOGGER.info("Chlorine loaded — laptop performance tuning alongside Sodium & friends");
         if (CONFIG.enableDistantMobAiThrottle) {
@@ -44,16 +43,6 @@ public class Chlorine implements ModInitializer {
                 "Distant mob AI throttling enabled (radius={} blocks, interval={} ticks)",
                 CONFIG.aiActiveRadius,
                 CONFIG.aiThrottleInterval
-            );
-        }
-        if (CONFIG.enableSimDistanceOverride
-                && (CONFIG.enableAdaptiveSimulationDistance || CONFIG.enableChunkGenGovernor || CONFIG.enableSimDistanceCap)) {
-            LOGGER.warn(
-                "Chlorine: enableSimDistanceOverride is on at the same time as the adaptive scaler, "
-                + "chunk-gen governor, or the hard cap. Those all drive the client's simulation distance "
-                + "slider, while the override writes to the server directly — running both is likely to "
-                + "look like flickering as they fight each other. Consider disabling the other three if "
-                + "you want the override's value to actually stick."
             );
         }
     }

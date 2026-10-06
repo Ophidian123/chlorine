@@ -48,7 +48,7 @@ public final class ChlorineConfigScreenBuilder {
                 .setTooltip(Component.literal("A hard ceiling simulation distance can never exceed, regardless of what the adaptive scaler or chunk-gen governor try to raise it to. Off by default."))
                 .setSaveConsumer(v -> cfg.enableSimDistanceCap = v)
                 .build());
-        simCap.addEntry(eb.startIntSlider(Component.literal("Max simulation distance"), cfg.maxSimulationDistance, 2, 32)
+        simCap.addEntry(eb.startIntSlider(Component.literal("Max simulation distance"), cfg.maxSimulationDistance, 5, 32)
                 .setTooltip(Component.literal("Simulation distance will never be allowed above this, even while raising back toward your original setting."))
                 .setSaveConsumer(v -> cfg.maxSimulationDistance = v)
                 .build());
@@ -58,7 +58,7 @@ public final class ChlorineConfigScreenBuilder {
                 .setTooltip(Component.literal("Lowers/raises simulation distance based on FPS. No render-graph rebuild, unlike render distance."))
                 .setSaveConsumer(v -> cfg.enableAdaptiveSimulationDistance = v)
                 .build());
-        scaler.addEntry(eb.startIntSlider(Component.literal("Min simulation distance"), cfg.minSimulationDistance, 1, 32)
+        scaler.addEntry(eb.startIntSlider(Component.literal("Min simulation distance"), cfg.minSimulationDistance, 5, 32)
                 .setSaveConsumer(v -> cfg.minSimulationDistance = v)
                 .build());
         scaler.addEntry(eb.startIntSlider(Component.literal("Low FPS threshold"), cfg.lowFpsThreshold, 5, 200)
@@ -198,32 +198,6 @@ public final class ChlorineConfigScreenBuilder {
                 .setSaveConsumer(v -> cfg.autoTuneMinCores = v)
                 .build());
 
-        ConfigCategory animThrottle = builder.getOrCreateCategory(Component.literal("Entity Animation Throttle"));
-        animThrottle.addEntry(eb.startBooleanToggle(Component.literal("Enable entity animation throttle"), cfg.enableEntityAnimationThrottle)
-                .setTooltip(Component.literal("Updates skeletal animation less frequently for distant entities."))
-                .setSaveConsumer(v -> cfg.enableEntityAnimationThrottle = v)
-                .build());
-        animThrottle.addEntry(eb.startDoubleField(Component.literal("Throttle distance (blocks)"), cfg.entityAnimThrottleDistance)
-                .setMin(4.0)
-                .setSaveConsumer(v -> cfg.entityAnimThrottleDistance = v)
-                .build());
-        animThrottle.addEntry(eb.startIntSlider(Component.literal("Throttle interval (frames)"), cfg.entityAnimThrottleInterval, 2, 20)
-                .setSaveConsumer(v -> cfg.entityAnimThrottleInterval = v)
-                .build());
-
-        ConfigCategory frameThrottle = builder.getOrCreateCategory(Component.literal("Item Frame Throttle"));
-        frameThrottle.addEntry(eb.startBooleanToggle(Component.literal("Enable item frame throttle"), cfg.enableItemFrameThrottle)
-                .setTooltip(Component.literal("Throttles item frame content re-extraction beyond a configurable distance (periodic, never fully stops)."))
-                .setSaveConsumer(v -> cfg.enableItemFrameThrottle = v)
-                .build());
-        frameThrottle.addEntry(eb.startDoubleField(Component.literal("Render distance (blocks)"), cfg.itemFrameRenderDistance)
-                .setMin(4.0)
-                .setSaveConsumer(v -> cfg.itemFrameRenderDistance = v)
-                .build());
-        frameThrottle.addEntry(eb.startIntSlider(Component.literal("Throttle interval (frames)"), cfg.itemFrameThrottleInterval, 1, 100)
-                .setSaveConsumer(v -> cfg.itemFrameThrottleInterval = v)
-                .build());
-
         ConfigCategory beaconThrottle = builder.getOrCreateCategory(Component.literal("Beacon & Portal Throttle"));
         beaconThrottle.addEntry(eb.startBooleanToggle(Component.literal("Enable beacon throttle"), cfg.enableBeaconThrottle)
                 .setTooltip(Component.literal("Skips rendering beacon beams beyond a configurable distance."))
@@ -289,15 +263,6 @@ public final class ChlorineConfigScreenBuilder {
         tickDiagnostics.addEntry(eb.startDoubleField(Component.literal("Warn threshold (ms/tick)"), cfg.tickDiagnosticsWarnMs)
                 .setMin(50.0)
                 .setSaveConsumer(v -> cfg.tickDiagnosticsWarnMs = v)
-                .build());
-
-        ConfigCategory simOverride = builder.getOrCreateCategory(Component.literal("Sub-Vanilla Sim Distance (Experimental)"));
-        simOverride.addEntry(eb.startBooleanToggle(Component.literal("Enable override"), cfg.enableSimDistanceOverride)
-                .setTooltip(Component.literal("Writes directly to the server's ChunkMap so simulation distance can go below vanilla's 5-chunk minimum, down to 1 chunk. Don't run alongside the adaptive scaler, chunk-gen governor, or hard cap above — see the log for a warning if you do."))
-                .setSaveConsumer(v -> cfg.enableSimDistanceOverride = v)
-                .build());
-        simOverride.addEntry(eb.startIntSlider(Component.literal("Override value"), cfg.overrideSimulationDistance, 1, 32)
-                .setSaveConsumer(v -> cfg.overrideSimulationDistance = v)
                 .build());
 
         return builder.build();
