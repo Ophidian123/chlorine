@@ -79,7 +79,8 @@ public class PerformanceScaler {
         if (originalSimulationDistance < 0) {
             originalSimulationDistance = SimDistanceBaseline.getOrCapture(simCurrent);
         }
-        boolean simAtFloor = simCurrent <= Chlorine.CONFIG.minSimulationDistance;
+        int simFloor = SimDistanceBaseline.optionFloor(Chlorine.CONFIG.minSimulationDistance);
+        boolean simAtFloor = simCurrent <= simFloor;
 
         OptionInstance<Double> entityOption = Chlorine.CONFIG.enableEntityDistanceScaling
                 ? client.options.entityDistanceScaling() : null;
@@ -95,7 +96,7 @@ public class PerformanceScaler {
 
         if (lowFps && ticksSinceLower >= Chlorine.CONFIG.lowerCooldownTicks) {
             if (!simAtFloor) {
-                int next = Math.max(Chlorine.CONFIG.minSimulationDistance, simCurrent - Math.max(1, Chlorine.CONFIG.simulationDistanceStep));
+                int next = Math.max(simFloor, simCurrent - Math.max(1, Chlorine.CONFIG.simulationDistanceStep));
                 simOption.set(next);
                 ticksSinceLower = 0;
                 fpsSamples.clear();

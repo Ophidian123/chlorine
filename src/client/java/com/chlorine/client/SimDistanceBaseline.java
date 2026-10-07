@@ -16,6 +16,7 @@ package com.chlorine.client;
  * internal state machines.
  */
 final class SimDistanceBaseline {
+    private static final int MIN_OPTION_VALUE = 5;
     private static int value = -1;
 
     private SimDistanceBaseline() {
@@ -34,5 +35,9 @@ final class SimDistanceBaseline {
         if (value >= 0 && currentValue >= value) {
             value = -1;
         }
+    }
+
+    static int optionFloor(int configuredMinimum) {
+        return Math.max(MIN_OPTION_VALUE, configuredMinimum);
     }
 }
