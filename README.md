@@ -5,6 +5,18 @@ Version-specific projects are kept in separate folders:
 - [Minecraft 26.2 (Chlorine 1.0.0)](26.2/README.md)
 - [Minecraft 26.3 (Chlorine 1.0.1)](26.3/README.md)
 
+Build locally from the version folder:
+
+```powershell
+Set-Location 26.2
+.\gradlew.bat build
+
+Set-Location ..\26.3
+.\gradlew.bat build
+```
+
+Each version's jars are written to that folder's `build/libs/`.
+
 Chlorine is a **Fabric performance and power-management mod for Minecraft
 26.2**. It targets CPU-side simulation work, bursty entity effects, and
 laptop power usage while leaving chunk rendering and renderer internals to

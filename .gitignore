@@ -30,7 +30,12 @@ bin/
 
 # fabric
 
+# Generated Gradle outputs and local game data; keep saves and logs out of Git.
 run/
+26.2/build/
+26.2/run/
+26.3/build/
+26.3/run/
 
 # java
 
