@@ -10,7 +10,7 @@ Chlorine is a **Fabric performance and power-management mod for Minecraft
 laptop power usage while leaving chunk rendering and renderer internals to
 specialized mods.
 
-Current release: **1.0.0**
+Current release: **1.0.1**
 
 ## What it does
 
