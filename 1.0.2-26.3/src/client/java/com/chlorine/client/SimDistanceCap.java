@@ -41,6 +41,7 @@ public class SimDistanceCap {
 
         if (current > max) {
             simOption.set(max);
+            SimDistanceBaseline.recordManagedValue(simOption.get());
             Chlorine.LOGGER.debug("Simulation distance {} exceeded configured cap, lowering to {}", current, max);
         }
     }

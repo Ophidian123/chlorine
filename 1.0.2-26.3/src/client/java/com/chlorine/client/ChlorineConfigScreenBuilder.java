@@ -48,7 +48,7 @@ public final class ChlorineConfigScreenBuilder {
                 .setTooltip(Component.literal("A hard ceiling simulation distance can never exceed, regardless of what the adaptive scaler or chunk-gen governor try to raise it to. Off by default."))
                 .setSaveConsumer(v -> cfg.enableSimDistanceCap = v)
                 .build());
-        simCap.addEntry(eb.startIntSlider(Component.literal("Max simulation distance"), cfg.maxSimulationDistance, 5, 32)
+        simCap.addEntry(eb.startIntSlider(Component.literal("Max simulation distance"), cfg.maxSimulationDistance, 1, 32)
                 .setTooltip(Component.literal("Simulation distance will never be allowed above this, even while raising back toward your original setting."))
                 .setSaveConsumer(v -> cfg.maxSimulationDistance = v)
                 .build());
@@ -58,7 +58,7 @@ public final class ChlorineConfigScreenBuilder {
                 .setTooltip(Component.literal("Lowers/raises simulation distance based on FPS. No render-graph rebuild, unlike render distance."))
                 .setSaveConsumer(v -> cfg.enableAdaptiveSimulationDistance = v)
                 .build());
-        scaler.addEntry(eb.startIntSlider(Component.literal("Min simulation distance"), cfg.minSimulationDistance, 5, 32)
+        scaler.addEntry(eb.startIntSlider(Component.literal("Min simulation distance"), cfg.minSimulationDistance, 1, 32)
                 .setSaveConsumer(v -> cfg.minSimulationDistance = v)
                 .build());
         scaler.addEntry(eb.startIntSlider(Component.literal("Low FPS threshold"), cfg.lowFpsThreshold, 5, 200)

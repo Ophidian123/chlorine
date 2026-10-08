@@ -5,7 +5,7 @@ Chlorine is a **Fabric performance and power-management mod for Minecraft
 laptop power usage while leaving chunk rendering and renderer internals to
 specialized mods.
 
-Current release: **1.0.1**
+Current release: **1.0.2**
 
 The last version made for Minecraft 26.2 was **1.0.0**.
 
@@ -81,7 +81,7 @@ and Iris; none of those mods is required.
 
 1. Install Fabric Loader for Minecraft 26.3.
 2. Install Fabric API and Cloth Config API.
-3. Place `chlorine-1.0.1.jar` in the instance's `mods` directory.
+3. Place `chlorine-1.0.2.jar` in the instance's `mods` directory.
 4. Optionally install Mod Menu for the in-game configuration screen.
 
 The configuration file is created at:
@@ -114,9 +114,10 @@ Important interactions:
 
 - The adaptive scaler, chunk governor, and simulation-distance cap all operate
   on the client simulation-distance option.
-- Minecraft validates the client simulation-distance option to a minimum of
-  5 chunks. Chlorine clamps its adaptive scaler, chunk governor, and cap to
-  that supported minimum.
+- Chlorine allows the client simulation-distance option to go down to 1
+  chunk. The adaptive scaler, chunk governor, and cap can all use that floor.
+- Changing simulation distance manually while playing updates the adaptive
+  scaler's restore target.
 - Lowering AI throttle intervals improves responsiveness but reduces the
   possible CPU savings. Start with the defaults and adjust gradually.
 

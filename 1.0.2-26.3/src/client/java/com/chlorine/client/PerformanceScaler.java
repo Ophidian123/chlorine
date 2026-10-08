@@ -58,6 +58,10 @@ public class PerformanceScaler {
             return; // not in a world — nothing to scale
         }
 
+        OptionInstance<Integer> simOption = client.options.simulationDistance();
+        int simCurrent = simOption.get();
+        originalSimulationDistance = SimDistanceBaseline.getOrCapture(simCurrent);
+
         int fps = client.getFps();
         fpsSamples.addLast(fps);
 
@@ -74,11 +78,6 @@ public class PerformanceScaler {
 
         double avg = fpsSamples.stream().mapToInt(Integer::intValue).average().orElse(fps);
 
-        OptionInstance<Integer> simOption = client.options.simulationDistance();
-        int simCurrent = simOption.get();
-        if (originalSimulationDistance < 0) {
-            originalSimulationDistance = SimDistanceBaseline.getOrCapture(simCurrent);
-        }
         int simFloor = SimDistanceBaseline.optionFloor(Chlorine.CONFIG.minSimulationDistance);
         boolean simAtFloor = simCurrent <= simFloor;
 
@@ -98,6 +97,7 @@ public class PerformanceScaler {
             if (!simAtFloor) {
                 int next = Math.max(simFloor, simCurrent - Math.max(1, Chlorine.CONFIG.simulationDistanceStep));
                 simOption.set(next);
+                SimDistanceBaseline.recordManagedValue(simOption.get());
                 ticksSinceLower = 0;
                 fpsSamples.clear();
                 Chlorine.LOGGER.debug("FPS averaging {}, lowering simulation distance {} -> {}", avg, simCurrent, next);
@@ -137,6 +137,7 @@ public class PerformanceScaler {
             } else if (simCurrent < effectiveSimCeiling()) {
                 int next = Math.min(effectiveSimCeiling(), simCurrent + Math.max(1, Chlorine.CONFIG.simulationDistanceStep));
                 simOption.set(next);
+                SimDistanceBaseline.recordManagedValue(simOption.get());
                 ticksSinceRaise = 0;
                 fpsSamples.clear();
                 SimDistanceBaseline.clearIfAtOrAboveBaseline(next);

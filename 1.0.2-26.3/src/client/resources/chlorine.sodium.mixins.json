@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.chlorine.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "SodiumSimulationDistanceRangeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

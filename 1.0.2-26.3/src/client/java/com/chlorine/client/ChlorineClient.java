@@ -22,6 +22,9 @@ public class ChlorineClient implements ClientModInitializer {
                 LowEndAutoTune.applyIfNeeded(client);
                 autoTuneApplied[0] = true;
             }
+            if (client.level != null) {
+                SimDistanceBaseline.observeCurrentValue(client.options.simulationDistance().get());
+            }
             if (Chlorine.CONFIG.enableAdaptiveSimulationDistance) {
                 scaler.tick(client);
             }
@@ -34,6 +37,9 @@ public class ChlorineClient implements ClientModInitializer {
             // Runs last so it always gets the final say, regardless of
             // what either system above just tried to set.
             cap.tick(client);
+            if (client.level != null) {
+                SimulationDistanceSync.publish(client.options.simulationDistance().get());
+            }
             // Reset at the end of each tick so the next tick's sound and
             // particle budgets start clean.
             ClientEffectBudgets.reset();
