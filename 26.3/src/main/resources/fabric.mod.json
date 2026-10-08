@@ -3,7 +3,7 @@
   "id": "chlorine",
   "version": "${version}",
   "name": "Chlorine",
-  "description": "CPU-side performance tuning that stacks alongside Sodium, Lithium, FerriteCore, EntityCulling and ImmediatelyFast — adaptive simulation distance, distant-mob AI/Brain throttling, item and XP orb merging, sound budgeting, and more.",
+  "description": "Experimental 26.3 alpha pre-release. Chlorine is in active development while simulation-distance and Sodium compatibility fixes are tested; expect bugs and changes.",
   "authors": [
     "you"
   ],
@@ -23,7 +23,15 @@
     ]
   },
   "mixins": [
-    "chlorine.mixins.json"
+    "chlorine.mixins.json",
+    {
+      "config": "chlorine.client.mixins.json",
+      "environment": "client"
+    },
+    {
+      "config": "chlorine.sodium.mixins.json",
+      "environment": "client"
+    }
   ],
   "depends": {
     "fabricloader": ">=0.19.5",

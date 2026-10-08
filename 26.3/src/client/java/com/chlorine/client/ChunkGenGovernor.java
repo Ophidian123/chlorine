@@ -70,6 +70,7 @@ public class ChunkGenGovernor {
             );
             if (reduced < simCurrent) {
                 simOption.set(reduced);
+                SimDistanceBaseline.recordManagedValue(simOption.get());
                 Chlorine.LOGGER.debug(
                     "Fast travel detected ({} blocks/tick), lowering simulation distance {} -> {}",
                     String.format("%.1f", speed), simCurrent, reduced
@@ -90,6 +91,7 @@ public class ChunkGenGovernor {
                         : baseline;
                 if (simCurrent < target) {
                     simOption.set(target);
+                    SimDistanceBaseline.recordManagedValue(simOption.get());
                     SimDistanceBaseline.clearIfAtOrAboveBaseline(target);
                     Chlorine.LOGGER.debug(
                         "Speed dropped, restoring simulation distance -> {}",

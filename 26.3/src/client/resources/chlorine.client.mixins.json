@@ -3,7 +3,9 @@
 	"package": "com.chlorine.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"ExampleClientMixin"
+		"ExampleClientMixin",
+		"SimulationDistanceRangeMixin",
+		"IntegratedServerSimulationDistanceMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

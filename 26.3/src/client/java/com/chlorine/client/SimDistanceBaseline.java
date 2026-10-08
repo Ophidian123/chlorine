@@ -16,8 +16,9 @@ package com.chlorine.client;
  * internal state machines.
  */
 final class SimDistanceBaseline {
-    private static final int MIN_OPTION_VALUE = 5;
+    private static final int MIN_OPTION_VALUE = 1;
     private static int value = -1;
+    private static int lastManagedValue = -1;
 
     private SimDistanceBaseline() {
     }
@@ -27,7 +28,26 @@ final class SimDistanceBaseline {
         if (value < 0) {
             value = currentValue;
         }
+        if (lastManagedValue < 0) {
+            lastManagedValue = currentValue;
+        }
         return value;
+    }
+
+    /**
+     * Treat option changes not made by Chlorine as the user's new preferred
+     * value, so an old startup setting is never restored over a manual edit.
+     */
+    static int observeCurrentValue(int currentValue) {
+        if (lastManagedValue >= 0 && currentValue != lastManagedValue) {
+            value = currentValue;
+        }
+        lastManagedValue = currentValue;
+        return getOrCapture(currentValue);
+    }
+
+    static void recordManagedValue(int currentValue) {
+        lastManagedValue = currentValue;
     }
 
     /** Call once a system has fully restored simulation distance back to (or above) the baseline, so a fresh baseline gets captured next time — e.g. if the user manually changes the setting later. */
@@ -35,6 +55,7 @@ final class SimDistanceBaseline {
         if (value >= 0 && currentValue >= value) {
             value = -1;
         }
+        lastManagedValue = currentValue;
     }
 
     static int optionFloor(int configuredMinimum) {
