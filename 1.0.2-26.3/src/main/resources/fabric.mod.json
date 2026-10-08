@@ -3,7 +3,7 @@
   "id": "chlorine",
   "version": "${version}",
   "name": "Chlorine",
-  "description": "Experimental 26.3 alpha pre-release. Chlorine is in active development while simulation-distance and Sodium compatibility fixes are tested; expect bugs and changes.",
+  "description": "CPU-side performance tuning for Minecraft 26.3 — adaptive simulation distance, distant-mob AI/Brain throttling, item and XP orb merging, sound budgeting, and more.",
   "authors": [
     "you"
   ],
