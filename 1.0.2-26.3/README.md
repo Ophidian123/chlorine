@@ -5,7 +5,7 @@ Chlorine is a **Fabric performance and power-management mod for Minecraft
 laptop power usage while leaving chunk rendering and renderer internals to
 specialized mods.
 
-Current release: **1.0.2**
+Current release: **1.0.2-hotfix1**
 
 ## What it does
 
@@ -79,7 +79,7 @@ and Iris; none of those mods is required.
 
 1. Install Fabric Loader for Minecraft 26.3.
 2. Install Fabric API and Cloth Config API.
-3. Place `chlorine-1.0.2.jar` in the instance's `mods` directory.
+3. Place `chlorine-1.0.2-hotfix1.jar` in the instance's `mods` directory.
 4. Optionally install Mod Menu for the in-game configuration screen.
 
 The configuration file is created at:

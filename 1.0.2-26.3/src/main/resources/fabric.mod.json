@@ -47,6 +47,16 @@
     "entityculling": "*",
     "immediatelyfast": "*",
     "iris": "*",
-    "modmenu": "*"
+    "modmenu": "*",
+    "betterblockentities": "*",
+    "c2me": "*",
+    "moreculling": "*",
+    "zfastnoise": "*",
+    "scalablelux": "*",
+    "modernfix": "*",
+    "vmp": "*",
+    "zconfig": "*",
+    "quick-pack": "*",
+    "servercore": "*"
   }
 }
