@@ -1,28 +1,13 @@
 # Chlorine
 
-Version-specific projects are kept in separate folders:
-
-- [Minecraft 26.2 (Chlorine 1.0.0)](26.2/README.md)
-- [Minecraft 26.3 (Chlorine 1.0.1)](26.3/README.md)
-
-Build locally from the version folder:
-
-```powershell
-Set-Location 26.2
-.\gradlew.bat build
-
-Set-Location ..\26.3
-.\gradlew.bat build
-```
-
-Each version's jars are written to that folder's `build/libs/`.
-
 Chlorine is a **Fabric performance and power-management mod for Minecraft
-26.2**. It targets CPU-side simulation work, bursty entity effects, and
+26.3**. It targets CPU-side simulation work, bursty entity effects, and
 laptop power usage while leaving chunk rendering and renderer internals to
 specialized mods.
 
 Current release: **1.0.1**
+
+The last version made for Minecraft 26.2 was **1.0.0**.
 
 ## What it does
 
@@ -81,8 +66,8 @@ removing the mod.
 
 ## Requirements
 
-- Minecraft **26.2**
-- Fabric Loader **0.17.0 or newer**
+- Minecraft **26.3**
+- Fabric Loader **0.19.5 or newer**
 - Fabric API
 - Java **25 or newer**
 - [Cloth Config API](https://modrinth.com/mod/cloth-config) (required)
@@ -94,9 +79,9 @@ and Iris; none of those mods is required.
 
 ## Installation
 
-1. Install Fabric Loader for Minecraft 26.2.
+1. Install Fabric Loader for Minecraft 26.3.
 2. Install Fabric API and Cloth Config API.
-3. Place `chlorine-1.0.0.jar` in the instance's `mods` directory.
+3. Place `chlorine-1.0.1.jar` in the instance's `mods` directory.
 4. Optionally install Mod Menu for the in-game configuration screen.
 
 The configuration file is created at:
